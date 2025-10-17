@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Slide, PresentationElement, TextElement, ImageElement, DataSource } from '@/src/types';
 import { ElementType } from '@/src/types';
 import { getSlideDimensions, convertToDirectUrl } from '@/src/utils/presentationUtils';
+import { MaximizeIcon, MinimizeIcon } from './Icons';
+import { ContextMenu, ContextMenuItem } from './ContextMenu';
 
 const populateSlideWithData = (templateSlide: Slide, dataRow: Record<string, any>): Slide => {
     const newSlide: Slide = JSON.parse(JSON.stringify(templateSlide));
@@ -35,6 +37,8 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
   const [currentSlide, setCurrentSlide] = useState<Slide>(slides[initialSlideIndex]);
   const [manualSlideIndex, setManualSlideIndex] = useState(initialSlideIndex);
   const [scale, setScale] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number }>({ visible: false, x: 0, y: 0 });
   const presentationRootRef = useRef<HTMLDivElement>(null);
   const presentationQueue = dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
 
@@ -107,6 +111,9 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
     const doc = presentationRootRef.current?.ownerDocument;
     if (!doc) return;
 
+    const handleFullscreenChange = () => setIsFullscreen(!!doc.fullscreenElement);
+    doc.addEventListener('fullscreenchange', handleFullscreenChange);
+
     if (autoFullscreen) {
       const timer = setTimeout(() => {
         if (doc.documentElement && !doc.fullscreenElement) {
@@ -115,9 +122,30 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
           });
         }
       }, 100);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        doc.removeEventListener('fullscreenchange', handleFullscreenChange);
+      };
     }
+    return () => doc.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [autoFullscreen]);
+
+  const toggleFullscreen = () => {
+    const doc = presentationRootRef.current?.ownerDocument?.documentElement;
+    if (!doc) return;
+    if (!isFullscreen) {
+      doc.requestFullscreen().catch(console.error);
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({ visible: true, x: e.clientX, y: e.clientY });
+  };
+
+  const closeContextMenu = () => setContextMenu({ ...contextMenu, visible: false });
 
   if (!currentSlide) return null;
 
@@ -171,6 +199,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
     <div 
       ref={presentationRootRef} 
       className="fixed inset-0 bg-black overflow-hidden"
+      onContextMenu={handleContextMenu}
     >
       <div 
         className="relative overflow-hidden"
@@ -184,6 +213,14 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
       >
         {currentSlide.elements.map(el => <div key={el.id}>{renderElement(el)}</div>)}
       </div>
+      {contextMenu.visible && (
+        <ContextMenu x={contextMenu.x} y={contextMenu.y} onClose={closeContextMenu}>
+          <ContextMenuItem onClick={() => { toggleFullscreen(); closeContextMenu(); }}>
+            {isFullscreen ? <MinimizeIcon className="h-4 w-4" /> : <MaximizeIcon className="h-4 w-4" />}
+            <span>{isFullscreen ? 'Thoát Toàn màn hình' : 'Toàn màn hình'}</span>
+          </ContextMenuItem>
+        </ContextMenu>
+      )}
     </div>
   );
 };
