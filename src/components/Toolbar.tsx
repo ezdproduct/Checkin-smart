@@ -1,5 +1,5 @@
 import React from 'react';
-import { DownloadIcon, UploadIcon, DatabaseIcon } from './Icons';
+import { DownloadIcon, UploadIcon } from './Icons';
 import { PresentationButton } from './PresentationButton';
 import { ViewTabs } from './ViewTabs';
 
@@ -9,11 +9,9 @@ interface ToolbarProps {
   onExportPresentation: () => void;
   onImportPresentation: () => void;
   onPresent: () => void;
-  onFetchData: () => void;
-  showDataButton: boolean;
 }
 
-export const Toolbar: React.FC<ToolbarProps> = ({ title, dispatch, onExportPresentation, onImportPresentation, onPresent, onFetchData, showDataButton }) => {
+export const Toolbar: React.FC<ToolbarProps> = ({ title, dispatch, onExportPresentation, onImportPresentation, onPresent }) => {
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({ type: 'UPDATE_TITLE', payload: { title: e.target.value } });
@@ -36,16 +34,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ title, dispatch, onExportPrese
             <ViewTabs />
         </div>
         <div className="flex items-center space-x-4">
-            {showDataButton && (
-              <button
-                  onClick={onFetchData}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md bg-secondary text-white hover:bg-green-600 transition-colors font-medium"
-                  title="Lấy dữ liệu từ Webhook"
-              >
-                  <DatabaseIcon className="w-5 h-5" />
-                  <span>Kết nối với dữ liệu</span>
-              </button>
-            )}
             <button
                 onClick={onImportPresentation}
                 className="flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-700 hover:text-gray-900"

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { usePresentation } from '@/src/context/PresentationContext';
 import { DataTable } from '@/src/components/DataTable';
 import { PlayIcon, ChevronsRightIcon, TrashIcon, EraserIcon } from '@/src/components/Icons';
@@ -12,6 +12,41 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
   const { state, dispatch } = usePresentation();
   const dataInput = state.dataSources.find(ds => ds.id === 'data-input');
   const presentationQueue = state.dataSources.find(ds => ds.id === 'presentation-queue');
+
+  useEffect(() => {
+    const fetchAndProcessData = async () => {
+      try {
+        const response = await fetch('https://n8n.probase.tech/webhook/checkin');
+        if (!response.ok) {
+          throw new Error(`Lỗi mạng: ${response.statusText}`);
+        }
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const checkedInCount = data.filter(item => item.checkin === true).length;
+          const currentQueueLength = presentationQueue?.data.length || 0;
+          
+          dispatch({ type: 'PROCESS_FETCHED_DATA', payload: { data } });
+
+          const newQueueLength = (presentationQueue?.data.length || 0) + checkedInCount;
+          if (newQueueLength > currentQueueLength) {
+             const addedCount = newQueueLength - currentQueueLength;
+             if (addedCount > 0) {
+                toast.success(`Đã tự động thêm ${addedCount} mục mới vào hàng đợi!`);
+             }
+          }
+        } else {
+          console.error("Dữ liệu trả về không phải là một mảng.");
+        }
+      } catch (error) {
+        console.error("Không thể tải dữ liệu:", error);
+      }
+    };
+
+    fetchAndProcessData(); // Chạy ngay lần đầu
+    const intervalId = setInterval(fetchAndProcessData, 5000); // Chạy mỗi 5 giây
+
+    return () => clearInterval(intervalId); // Dọn dẹp khi component unmount
+  }, [dispatch, presentationQueue?.data.length]);
 
   const handleAddToQueue = (row: Record<string, any>) => {
     dispatch({ type: 'ADD_TO_QUEUE', payload: { item: row } });

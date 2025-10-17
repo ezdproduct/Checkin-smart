@@ -19,7 +19,8 @@ type Action =
   | { type: 'ADD_TO_QUEUE'; payload: { item: Record<string, any> } }
   | { type: 'REMOVE_FROM_QUEUE'; payload: { itemIndex: number } }
   | { type: 'CLEAR_QUEUE' }
-  | { type: 'PROCESS_FIRST_QUEUE_ITEM' };
+  | { type: 'PROCESS_FIRST_QUEUE_ITEM' }
+  | { type: 'PROCESS_FETCHED_DATA'; payload: { data: Record<string, any>[] } };
 
 const createNewSlide = (): Slide => ({
   id: `slide-${Date.now()}`,
@@ -212,6 +213,31 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
             dataSources: state.dataSources.map(ds =>
                 ds.id === 'presentation-queue' ? { ...ds, data: newQueueData } : ds
             ),
+        };
+    }
+    case 'PROCESS_FETCHED_DATA': {
+        const { data } = action.payload;
+        const checkedInItems = data.filter(item => item.checkin === true);
+        const otherItems = data.filter(item => item.checkin !== true);
+
+        const currentQueue = state.dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
+        const newQueueData = [...currentQueue];
+
+        // Chỉ thêm các mục mới chưa có trong hàng đợi
+        checkedInItems.forEach(item => {
+            // Giả sử mỗi mục có một thuộc tính 'id' duy nhất
+            if (!newQueueData.some(queueItem => queueItem.id === item.id)) {
+                newQueueData.push(item);
+            }
+        });
+
+        return {
+            ...state,
+            dataSources: state.dataSources.map(ds => {
+                if (ds.id === 'presentation-queue') return { ...ds, data: newQueueData };
+                if (ds.id === 'data-input') return { ...ds, data: otherItems };
+                return ds;
+            }),
         };
     }
     default:

@@ -15,29 +15,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ onStartPresentation }) =
   const importFileInputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
 
-  const handleFetchData = async () => {
-    const fetchDataPromise = fetch('https://n8n.probase.tech/webhook/checkin')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Lỗi mạng: ${response.statusText}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (Array.isArray(data)) {
-          dispatch({ type: 'UPDATE_DATA_SOURCE', payload: { id: 'data-input', data } });
-        } else {
-          throw new Error("Dữ liệu trả về không phải là một mảng.");
-        }
-      });
-
-    toast.promise(fetchDataPromise, {
-      loading: 'Đang tải dữ liệu...',
-      success: 'Tải dữ liệu thành công!',
-      error: (err) => `Không thể tải dữ liệu: ${err.message}`,
-    });
-  };
-
   const handleExportPresentation = () => {
     const presentationData = {
       title: state.title,
@@ -122,8 +99,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ onStartPresentation }) =
         onExportPresentation={handleExportPresentation}
         onImportPresentation={triggerImport}
         onPresent={handlePresent}
-        onFetchData={handleFetchData}
-        showDataButton={location.pathname.includes('/data')}
       />
       <Outlet context={{ onStartPresentation }} />
     </>
