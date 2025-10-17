@@ -297,7 +297,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
             slideDesignDimensions={slideDesignDimensions}
             autoplayDuration={autoplayDuration}
             mode={mode}
-            className={slideState.isTransitioning ? 'animate-ripple-in' : ''}
+            className={slideState.isTransitioning ? 'animate-fade-in' : ''}
         />
       </div>
       {contextMenu.visible && (

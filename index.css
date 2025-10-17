@@ -18,17 +18,8 @@
   to { transform: scale(1); opacity: 1; }
 }
 
-@keyframes ripple-in {
-  from {
-    clip-path: circle(0% at 50% 50%);
-  }
-  to {
-    clip-path: circle(75% at 50% 50%);
-  }
-}
-
 .animate-fade-in {
-  animation: fadeIn 0.7s ease-out both;
+  animation: fadeIn 1s ease-out both;
 }
 
 .animate-fade-out {
@@ -41,8 +32,4 @@
 
 .animate-zoom-in {
   animation: zoomIn 0.7s ease-out both;
-}
-
-.animate-ripple-in {
-  animation: ripple-in 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
