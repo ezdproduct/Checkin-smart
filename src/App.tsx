@@ -49,8 +49,8 @@ const AppContent: React.FC = () => {
   }, [state.slides, openPresentationWindow]);
 
   const handlePresentQueue = useCallback(() => {
-    if (state.slides.length < 2) {
-      toast.error("Cần có ít nhất 2 slide: 1 slide chào mừng và 1 slide mẫu dữ liệu.");
+    if (state.slides.length < 3) {
+      toast.error("Cần có ít nhất 3 slide: 1 slide chào mừng, 1 slide cho Nam, và 1 slide cho Nữ.");
       return;
     }
     startPresentation({ mode: 'autoplay' });

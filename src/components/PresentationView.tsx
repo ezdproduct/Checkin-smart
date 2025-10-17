@@ -147,7 +147,8 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
     }
 
     const welcomeSlide = slides[0];
-    const templateSlide = slides[1];
+    const maleTemplateSlide = slides[1];
+    const femaleTemplateSlide = slides[2];
     const nextItemInQueue = presentationQueue[0];
 
     // Transition back to welcome slide
@@ -164,27 +165,39 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
     }
     
     // Transition to next data slide
-    if (nextItemInQueue && templateSlide) {
-        const populatedSlide = populateSlideWithData(templateSlide, nextItemInQueue);
-        
-        setSlideState(prevState => ({
-            previous: prevState.current,
-            current: populatedSlide,
-            isTransitioning: true,
-        }));
+    if (nextItemInQueue) {
+        let templateSlide: Slide | undefined;
+        // Assuming the gender field is named 'gender'
+        if (String(nextItemInQueue.gender).toLowerCase() === 'nữ' && femaleTemplateSlide) {
+            templateSlide = femaleTemplateSlide;
+        } else if (maleTemplateSlide) {
+            templateSlide = maleTemplateSlide; // Default to male template
+        }
 
-        const transitionTimer = setTimeout(() => {
-            setSlideState(prevState => ({ ...prevState, previous: null, isTransitioning: false }));
-        }, 1000);
+        if (templateSlide) {
+            const populatedSlide = populateSlideWithData(templateSlide, nextItemInQueue);
+            
+            setSlideState(prevState => ({
+                previous: prevState.current,
+                current: populatedSlide,
+                isTransitioning: true,
+            }));
 
-        const slideTimer = setTimeout(() => {
-            dispatch({ type: 'MOVE_QUEUE_ITEM_TO_PRESENTED', payload: { item: nextItemInQueue } });
-        }, autoplayDuration);
+            const transitionTimer = setTimeout(() => {
+                setSlideState(prevState => ({ ...prevState, previous: null, isTransitioning: false }));
+            }, 1000);
 
-        return () => {
-            clearTimeout(transitionTimer);
-            clearTimeout(slideTimer);
-        };
+            const slideTimer = setTimeout(() => {
+                dispatch({ type: 'MOVE_QUEUE_ITEM_TO_PRESENTED', payload: { item: nextItemInQueue } });
+            }, autoplayDuration);
+
+            return () => {
+                clearTimeout(transitionTimer);
+                clearTimeout(slideTimer);
+            };
+        } else {
+            setSlideState({ current: welcomeSlide, previous: null, isTransitioning: false });
+        }
     } else {
         // Initial state or queue is empty
         setSlideState({ current: welcomeSlide, previous: null, isTransitioning: false });
