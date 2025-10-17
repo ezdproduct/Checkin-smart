@@ -11,6 +11,7 @@ interface DataViewProps {
 export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
   const { state, dispatch } = usePresentation();
   const presentationQueue = state.dataSources.find(ds => ds.id === 'presentation-queue');
+  const presentedItems = state.dataSources.find(ds => ds.id === 'presented-items');
 
   const stateRef = useRef(state);
   useEffect(() => {
@@ -38,7 +39,9 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
         }
 
         const currentQueue = stateRef.current.dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
-        const existingIds = new Set(currentQueue.map(i => i.row_number));
+        const currentPresented = stateRef.current.dataSources.find(ds => ds.id === 'presented-items')?.data || [];
+        const existingIds = new Set([...currentQueue.map(i => i.row_number), ...currentPresented.map(i => i.row_number)]);
+        
         const newItems = data.filter(item => !existingIds.has(item.row_number));
         
         if (newItems.length > 0) {
@@ -69,13 +72,14 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
   };
 
   return (
-    <div className="flex-grow flex flex-col gap-6 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-surface-200">
-      <div className="max-w-4xl w-full mx-auto flex flex-col gap-4">
+    <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-surface-200">
+      {/* Presentation Queue Column */}
+      <div className="flex flex-col gap-4">
         <div className="flex justify-between items-start">
             <div>
                 <h2 className="text-2xl font-bold text-text-900">Hàng đợi trình chiếu</h2>
                 <p className="text-gray-600 mt-1">
-                    Dữ liệu mới sẽ tự động được thêm vào đây. Các mục này sẽ được dùng để tạo slide khi trình chiếu.
+                    Dữ liệu mới sẽ tự động được thêm vào đây.
                 </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0 mt-1">
@@ -120,6 +124,22 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
                         </button>
                     </div>
                 )}
+            />
+        </div>
+      </div>
+
+      {/* Presented Items Column */}
+      <div className="flex flex-col gap-4">
+        <div>
+            <h2 className="text-2xl font-bold text-text-900">Đã trình chiếu</h2>
+            <p className="text-gray-600 mt-1">
+                Lịch sử các mục đã được hiển thị.
+            </p>
+        </div>
+        <div className="flex-grow">
+            <DataTable 
+                data={presentedItems?.data || []} 
+                renderRowActions={() => <></>}
             />
         </div>
       </div>

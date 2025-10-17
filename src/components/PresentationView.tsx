@@ -32,10 +32,9 @@ interface PresentationViewProps {
   dispatch: React.Dispatch<any>;
 }
 
-export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onExit, initialSlideIndex, autoFullscreen, mode, dataSources }) => {
+export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onExit, initialSlideIndex, autoFullscreen, mode, dataSources, dispatch }) => {
   const [currentSlide, setCurrentSlide] = useState<Slide>(slides[initialSlideIndex]);
   const [manualSlideIndex, setManualSlideIndex] = useState(initialSlideIndex);
-  const [autoplayIndex, setAutoplayIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [scale, setScale] = useState(1);
   const presentationRootRef = useRef<HTMLDivElement>(null);
@@ -51,22 +50,21 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
 
     const welcomeSlide = slides[0];
     const templateSlide = slides[1]; 
+    const nextItemInQueue = presentationQueue[0];
 
-    if (presentationQueue.length > 0 && templateSlide) {
-        const currentQueueItem = presentationQueue[autoplayIndex];
-        const populatedSlide = populateSlideWithData(templateSlide, currentQueueItem);
+    if (nextItemInQueue && templateSlide) {
+        const populatedSlide = populateSlideWithData(templateSlide, nextItemInQueue);
         setCurrentSlide(populatedSlide);
 
         const timer = setTimeout(() => {
-            setAutoplayIndex(prevIndex => (prevIndex + 1) % presentationQueue.length);
+            dispatch({ type: 'MOVE_QUEUE_ITEM_TO_PRESENTED', payload: { item: nextItemInQueue } });
         }, 3000);
 
         return () => clearTimeout(timer);
     } else {
         setCurrentSlide(welcomeSlide);
-        setAutoplayIndex(0);
     }
-  }, [mode, presentationQueue, slides, manualSlideIndex, autoplayIndex]);
+  }, [mode, presentationQueue, slides, manualSlideIndex, dispatch]);
 
   const nextSlide = useCallback(() => {
     setManualSlideIndex(prev => (prev + 1) % slides.length);

@@ -18,7 +18,8 @@ type Action =
   | { type: 'UPDATE_DATA_SOURCE'; payload: { id: string; data: Record<string, any>[] } }
   | { type: 'REMOVE_FROM_QUEUE'; payload: { itemIndex: number } }
   | { type: 'CLEAR_QUEUE' }
-  | { type: 'PROCESS_FETCHED_DATA'; payload: { data: Record<string, any>[] } };
+  | { type: 'PROCESS_FETCHED_DATA'; payload: { data: Record<string, any>[] } }
+  | { type: 'MOVE_QUEUE_ITEM_TO_PRESENTED'; payload: { item: Record<string, any> } };
 
 const createNewSlide = (): Slide => ({
   id: `slide-${Date.now()}`,
@@ -42,7 +43,8 @@ const initialState: PresentationState = {
   selectedElementId: null,
   title: 'Bài thuyết trình',
   dataSources: [
-    { id: 'presentation-queue', name: 'Hàng đợi trình chiếu', data: [] }
+    { id: 'presentation-queue', name: 'Hàng đợi trình chiếu', data: [] },
+    { id: 'presented-items', name: 'Đã trình chiếu', data: [] }
   ],
 };
 initialState.activeSlideId = initialState.slides[0].id;
@@ -186,7 +188,13 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
         const { data: fetchedData } = action.payload;
         
         const currentQueue = state.dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
-        const existingIds = new Set(currentQueue.map(item => item.row_number));
+        const presentedItems = state.dataSources.find(ds => ds.id === 'presented-items')?.data || [];
+
+        const existingIds = new Set([
+            ...currentQueue.map(item => item.row_number),
+            ...presentedItems.map(item => item.row_number)
+        ]);
+
         const newItems = fetchedData.filter(item => !existingIds.has(item.row_number));
         const newQueueData = [...currentQueue, ...newItems];
 
@@ -194,6 +202,25 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
             ...state,
             dataSources: state.dataSources.map(ds => {
                 if (ds.id === 'presentation-queue') return { ...ds, data: newQueueData };
+                return ds;
+            }),
+        };
+    }
+    case 'MOVE_QUEUE_ITEM_TO_PRESENTED': {
+        const { item } = action.payload;
+        const queue = state.dataSources.find(ds => ds.id === 'presentation-queue');
+        const presented = state.dataSources.find(ds => ds.id === 'presented-items');
+
+        if (!queue || !presented) return state;
+
+        const newQueueData = queue.data.filter(d => d.row_number !== item.row_number);
+        const newPresentedData = [...presented.data, item];
+
+        return {
+            ...state,
+            dataSources: state.dataSources.map(ds => {
+                if (ds.id === 'presentation-queue') return { ...ds, data: newQueueData };
+                if (ds.id === 'presented-items') return { ...ds, data: newPresentedData };
                 return ds;
             }),
         };
