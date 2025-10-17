@@ -17,6 +17,7 @@ const AppContent: React.FC = () => {
     settings: { mode: 'manual' | 'autoplay' };
     initialSlideIndex: number;
   } | null>(null);
+  const [presentationKey, setPresentationKey] = useState(0);
   
   const handleExitPresentation = useCallback(() => {
     setPresentationProps(null);
@@ -43,6 +44,7 @@ const AppContent: React.FC = () => {
       settings,
       initialSlideIndex 
     });
+    setPresentationKey(Date.now()); // Reset the presentation view component
     openPresentationWindow();
   }, [state.slides, openPresentationWindow]);
 
@@ -71,6 +73,7 @@ const AppContent: React.FC = () => {
       </div>
       {container && presentationProps && createPortal(
         <PresentationView
+          key={presentationKey}
           slides={presentationProps.slides}
           onExit={handleExitPresentation}
           initialSlideIndex={presentationProps.initialSlideIndex}
