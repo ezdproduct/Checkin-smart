@@ -136,6 +136,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
   const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number }>({ visible: false, x: 0, y: 0 });
   const presentationRootRef = useRef<HTMLDivElement>(null);
   const presentationQueue = dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
+  const prevQueueLength = useRef(presentationQueue.length);
 
   const slideDesignDimensions = getSlideDimensions('16:9');
 
@@ -146,9 +147,23 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
     }
 
     const welcomeSlide = slides[0];
-    const templateSlide = slides[1]; 
+    const templateSlide = slides[1];
     const nextItemInQueue = presentationQueue[0];
 
+    // Transition back to welcome slide
+    if (presentationQueue.length === 0 && prevQueueLength.current > 0) {
+        setSlideState(prevState => ({
+            previous: prevState.current,
+            current: welcomeSlide,
+            isTransitioning: true,
+        }));
+        const timer = setTimeout(() => {
+            setSlideState(prevState => ({ ...prevState, previous: null, isTransitioning: false }));
+        }, 1000);
+        return () => clearTimeout(timer);
+    }
+    
+    // Transition to next data slide
     if (nextItemInQueue && templateSlide) {
         const populatedSlide = populateSlideWithData(templateSlide, nextItemInQueue);
         
@@ -160,7 +175,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
 
         const transitionTimer = setTimeout(() => {
             setSlideState(prevState => ({ ...prevState, previous: null, isTransitioning: false }));
-        }, 1000); // Duration of the ripple animation
+        }, 1000);
 
         const slideTimer = setTimeout(() => {
             dispatch({ type: 'MOVE_QUEUE_ITEM_TO_PRESENTED', payload: { item: nextItemInQueue } });
@@ -171,8 +186,13 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
             clearTimeout(slideTimer);
         };
     } else {
+        // Initial state or queue is empty
         setSlideState({ current: welcomeSlide, previous: null, isTransitioning: false });
     }
+
+    // Update previous queue length for next render
+    prevQueueLength.current = presentationQueue.length;
+
   }, [mode, presentationQueue, slides, manualSlideIndex, dispatch, autoplayDuration]);
 
   const nextSlide = useCallback(() => {
