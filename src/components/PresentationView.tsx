@@ -32,6 +32,83 @@ const getAnimationClass = (animation?: TextElement['entryAnimation']) => {
     }
 };
 
+interface SlideComponentProps {
+    slide: Slide;
+    slideDesignDimensions: { width: number; height: number };
+    autoplayDuration: number;
+    mode: 'manual' | 'autoplay';
+    className?: string;
+}
+
+const SlideComponent: React.FC<SlideComponentProps> = ({ slide, slideDesignDimensions, autoplayDuration, mode, className }) => {
+    const renderElement = (element: PresentationElement) => {
+        const style: React.CSSProperties = {
+            position: 'absolute',
+            left: `${(element.x / slideDesignDimensions.width) * 100}%`,
+            top: `${(element.y / slideDesignDimensions.height) * 100}%`,
+            width: `${(element.width / slideDesignDimensions.width) * 100}%`,
+            height: `${(element.height / slideDesignDimensions.height) * 100}%`,
+            transform: `rotate(${element.rotation}deg)`,
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word'
+        };
+
+        switch (element.type) {
+            case ElementType.TEXT: {
+                const textEl = element as TextElement;
+                const animationClass = getAnimationClass(textEl.entryAnimation);
+                const textStyle: React.CSSProperties = {
+                    ...style,
+                    fontSize: `${textEl.fontSize}px`,
+                    color: textEl.color,
+                    fontFamily: textEl.fontFamily,
+                    textAlign: textEl.align,
+                    fontWeight: textEl.fontWeight,
+                    fontStyle: textEl.fontStyle,
+                    textDecoration: textEl.textDecoration,
+                    textTransform: textEl.textTransform,
+                };
+                if (animationClass && mode === 'autoplay') {
+                    textStyle.animationDuration = `${autoplayDuration}ms`;
+                }
+                return <div style={textStyle} className={animationClass}>{textEl.text}</div>;
+            }
+            case ElementType.IMAGE: {
+                const imgEl = element as ImageElement;
+                return <img src={convertToDirectUrl(imgEl.src)} alt="" style={style} className="object-cover" referrerPolicy="no-referrer" />;
+            }
+            default:
+                return null;
+        }
+    }
+
+    const slideStyle: React.CSSProperties = {
+        backgroundColor: slide.backgroundColor,
+        backgroundImage: slide.backgroundVideo ? 'none' : (slide.backgroundImage ? `url(${convertToDirectUrl(slide.backgroundImage)})` : 'none'),
+        backgroundSize: slide.backgroundSize ? `${slide.backgroundSize}%` : 'cover',
+        backgroundPosition: `${slide.backgroundPositionX || 50}% ${slide.backgroundPositionY || 50}%`,
+        width: '100%',
+        height: '100%',
+    };
+
+    return (
+        <div className={`absolute top-0 left-0 w-full h-full overflow-hidden ${className || ''}`} style={slideStyle}>
+            {slide.backgroundVideo && (
+                <video
+                    key={slide.id}
+                    src={convertToDirectUrl(slide.backgroundVideo)}
+                    muted
+                    autoPlay
+                    loop
+                    className="absolute top-0 left-0 w-full h-full object-cover"
+                />
+            )}
+            {slide.elements.map(el => <div key={`${slide.id}-${el.id}`}>{renderElement(el)}</div>)}
+        </div>
+    );
+};
+
+
 interface PresentationViewProps {
   slides: Slide[];
   onExit: () => void;
@@ -44,7 +121,15 @@ interface PresentationViewProps {
 }
 
 export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onExit, initialSlideIndex, autoFullscreen, mode, dataSources, dispatch, autoplayDuration }) => {
-  const [currentSlide, setCurrentSlide] = useState<Slide>(slides[initialSlideIndex]);
+  const [slideState, setSlideState] = useState<{
+      current: Slide;
+      previous: Slide | null;
+      isTransitioning: boolean;
+  }>({
+      current: slides[initialSlideIndex],
+      previous: null,
+      isTransitioning: false,
+  });
   const [manualSlideIndex, setManualSlideIndex] = useState(initialSlideIndex);
   const [scale, setScale] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -56,7 +141,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
 
   useEffect(() => {
     if (mode !== 'autoplay') {
-        setCurrentSlide(slides[manualSlideIndex]);
+        setSlideState({ current: slides[manualSlideIndex], previous: null, isTransitioning: false });
         return;
     }
 
@@ -66,15 +151,27 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
 
     if (nextItemInQueue && templateSlide) {
         const populatedSlide = populateSlideWithData(templateSlide, nextItemInQueue);
-        setCurrentSlide(populatedSlide);
+        
+        setSlideState(prevState => ({
+            previous: prevState.current,
+            current: populatedSlide,
+            isTransitioning: true,
+        }));
 
-        const timer = setTimeout(() => {
+        const transitionTimer = setTimeout(() => {
+            setSlideState(prevState => ({ ...prevState, previous: null, isTransitioning: false }));
+        }, 1000); // Duration of the ripple animation
+
+        const slideTimer = setTimeout(() => {
             dispatch({ type: 'MOVE_QUEUE_ITEM_TO_PRESENTED', payload: { item: nextItemInQueue } });
         }, autoplayDuration);
 
-        return () => clearTimeout(timer);
+        return () => {
+            clearTimeout(transitionTimer);
+            clearTimeout(slideTimer);
+        };
     } else {
-        setCurrentSlide(welcomeSlide);
+        setSlideState({ current: welcomeSlide, previous: null, isTransitioning: false });
     }
   }, [mode, presentationQueue, slides, manualSlideIndex, dispatch, autoplayDuration]);
 
@@ -157,58 +254,6 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
 
   const closeContextMenu = () => setContextMenu({ ...contextMenu, visible: false });
 
-  if (!currentSlide) return null;
-
-  const renderElement = (element: PresentationElement) => {
-    const style: React.CSSProperties = {
-      position: 'absolute',
-      left: `${(element.x / slideDesignDimensions.width) * 100}%`,
-      top: `${(element.y / slideDesignDimensions.height) * 100}%`,
-      width: `${(element.width / slideDesignDimensions.width) * 100}%`,
-      height: `${(element.height / slideDesignDimensions.height) * 100}%`,
-      transform: `rotate(${element.rotation}deg)`,
-      whiteSpace: 'pre-wrap', 
-      wordBreak: 'break-word'
-    };
-
-    switch (element.type) {
-        case ElementType.TEXT: {
-            const textEl = element as TextElement;
-            const animationClass = getAnimationClass(textEl.entryAnimation);
-            const textStyle: React.CSSProperties = {
-                ...style,
-                fontSize: `${textEl.fontSize}px`,
-                color: textEl.color,
-                fontFamily: textEl.fontFamily,
-                textAlign: textEl.align,
-                fontWeight: textEl.fontWeight,
-                fontStyle: textEl.fontStyle,
-                textDecoration: textEl.textDecoration,
-                textTransform: textEl.textTransform,
-            };
-            if (animationClass && mode === 'autoplay') {
-                textStyle.animationDuration = `${autoplayDuration}ms`;
-            }
-            return <div style={textStyle} className={animationClass}>{textEl.text}</div>;
-        }
-        case ElementType.IMAGE: {
-            const imgEl = element as ImageElement;
-            return <img src={convertToDirectUrl(imgEl.src)} alt="" style={style} className="object-cover" referrerPolicy="no-referrer" />;
-        }
-        default:
-            return null;
-    }
-  }
-  
-  const slideStyle: React.CSSProperties = {
-    backgroundColor: currentSlide.backgroundColor,
-    backgroundImage: currentSlide.backgroundVideo ? 'none' : (currentSlide.backgroundImage ? `url(${convertToDirectUrl(currentSlide.backgroundImage)})` : 'none'),
-    backgroundSize: currentSlide.backgroundSize ? `${currentSlide.backgroundSize}%` : 'cover',
-    backgroundPosition: `${currentSlide.backgroundPositionX || 50}% ${currentSlide.backgroundPositionY || 50}%`,
-    width: `${slideDesignDimensions.width}px`,
-    height: `${slideDesignDimensions.height}px`,
-  };
-
   return (
     <div 
       ref={presentationRootRef} 
@@ -216,26 +261,33 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
       onContextMenu={handleContextMenu}
     >
       <div 
-        className="relative overflow-hidden"
+        className="relative"
         style={{
-          ...slideStyle,
+          width: `${slideDesignDimensions.width}px`,
+          height: `${slideDesignDimensions.height}px`,
           position: 'absolute',
           top: '50%',
           left: '50%',
           transform: `translate(-50%, -50%) scale(${scale})`,
         }}
       >
-        {currentSlide.backgroundVideo && (
-            <video
-              key={currentSlide.id}
-              src={convertToDirectUrl(currentSlide.backgroundVideo)}
-              muted
-              autoPlay
-              loop
-              className="absolute top-0 left-0 w-full h-full object-cover"
+        {slideState.previous && (
+            <SlideComponent 
+                key={slideState.previous.id}
+                slide={slideState.previous}
+                slideDesignDimensions={slideDesignDimensions}
+                autoplayDuration={autoplayDuration}
+                mode={mode}
             />
         )}
-        {currentSlide.elements.map(el => <div key={`${currentSlide.id}-${el.id}`}>{renderElement(el)}</div>)}
+        <SlideComponent 
+            key={slideState.current.id}
+            slide={slideState.current}
+            slideDesignDimensions={slideDesignDimensions}
+            autoplayDuration={autoplayDuration}
+            mode={mode}
+            className={slideState.isTransitioning ? 'animate-ripple-in' : ''}
+        />
       </div>
       {contextMenu.visible && (
         <ContextMenu x={contextMenu.x} y={contextMenu.y} onClose={closeContextMenu}>
