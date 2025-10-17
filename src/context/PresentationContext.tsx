@@ -16,7 +16,6 @@ type Action =
   | { type: 'UPDATE_SLIDE_BACKGROUND'; payload: { slideId: string; background: Partial<Pick<Slide, 'backgroundColor' | 'backgroundImage' | 'backgroundPositionX' | 'backgroundPositionY' | 'backgroundSize'>> } }
   | { type: 'UPDATE_TITLE'; payload: { title: string } }
   | { type: 'UPDATE_DATA_SOURCE'; payload: { id: string; data: Record<string, any>[] } }
-  | { type: 'ADD_TO_QUEUE'; payload: { item: Record<string, any> } }
   | { type: 'REMOVE_FROM_QUEUE'; payload: { itemIndex: number } }
   | { type: 'CLEAR_QUEUE' }
   | { type: 'PROCESS_FETCHED_DATA'; payload: { data: Record<string, any>[] } };
@@ -43,7 +42,6 @@ const initialState: PresentationState = {
   selectedElementId: null,
   title: 'Bài thuyết trình',
   dataSources: [
-    { id: 'data-input', name: 'Dữ liệu đầu vào', data: [] },
     { id: 'presentation-queue', name: 'Hàng đợi trình chiếu', data: [] }
   ],
 };
@@ -164,25 +162,6 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
         dataSources: state.dataSources.map(ds => ds.id === id ? { ...ds, data } : ds),
       };
     }
-    case 'ADD_TO_QUEUE': {
-        const { item } = action.payload;
-        const queue = state.dataSources.find(ds => ds.id === 'presentation-queue');
-        const dataInput = state.dataSources.find(ds => ds.id === 'data-input');
-
-        if (!queue || !dataInput) return state;
-        
-        const newQueueData = [...queue.data, item];
-        const newDataInputData = dataInput.data.filter(d => d.row_number !== item.row_number);
-        
-        return {
-            ...state,
-            dataSources: state.dataSources.map(ds => {
-                if (ds.id === 'presentation-queue') return { ...ds, data: newQueueData };
-                if (ds.id === 'data-input') return { ...ds, data: newDataInputData };
-                return ds;
-            }),
-        };
-    }
     case 'REMOVE_FROM_QUEUE': {
         const { itemIndex } = action.payload;
         const queue = state.dataSources.find(ds => ds.id === 'presentation-queue');
@@ -207,28 +186,14 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
         const { data: fetchedData } = action.payload;
         
         const currentQueue = state.dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
-        const currentInput = state.dataSources.find(ds => ds.id === 'data-input')?.data || [];
-
-        const existingIds = new Set([
-            ...currentQueue.map(item => item.row_number),
-            ...currentInput.map(item => item.row_number)
-        ]);
-
+        const existingIds = new Set(currentQueue.map(item => item.row_number));
         const newItems = fetchedData.filter(item => !existingIds.has(item.row_number));
-
-        const isCheckedIn = (item: any) => String(item.checkin).toLowerCase() === 'true';
-
-        const newItemsForQueue = newItems.filter(isCheckedIn);
-        const newItemsForInput = newItems.filter(item => !isCheckedIn(item));
-
-        const newQueueData = [...currentQueue, ...newItemsForQueue];
-        const newInputData = [...currentInput, ...newItemsForInput];
+        const newQueueData = [...currentQueue, ...newItems];
 
         return {
             ...state,
             dataSources: state.dataSources.map(ds => {
                 if (ds.id === 'presentation-queue') return { ...ds, data: newQueueData };
-                if (ds.id === 'data-input') return { ...ds, data: newInputData };
                 return ds;
             }),
         };
