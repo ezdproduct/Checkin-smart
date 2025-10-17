@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { usePresentation } from '@/src/context/PresentationContext';
 import { DataTable } from '@/src/components/DataTable';
 import { PlayIcon, ChevronsRightIcon, TrashIcon, EraserIcon } from '@/src/components/Icons';
@@ -13,6 +13,11 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
   const dataInput = state.dataSources.find(ds => ds.id === 'data-input');
   const presentationQueue = state.dataSources.find(ds => ds.id === 'presentation-queue');
 
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   useEffect(() => {
     const fetchAndProcessData = async () => {
       try {
@@ -22,17 +27,20 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
         }
         const data = await response.json();
         if (Array.isArray(data)) {
-          const checkedInCount = data.filter(item => item.checkin === true).length;
-          const currentQueueLength = presentationQueue?.data.length || 0;
+          const currentQueue = stateRef.current.dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
+          const checkedInItems = data.filter(item => item.checkin === true);
           
+          let newItemsAddedCount = 0;
+          checkedInItems.forEach(item => {
+            if (!currentQueue.some(queueItem => queueItem.id === item.id)) {
+              newItemsAddedCount++;
+            }
+          });
+
           dispatch({ type: 'PROCESS_FETCHED_DATA', payload: { data } });
 
-          const newQueueLength = (presentationQueue?.data.length || 0) + checkedInCount;
-          if (newQueueLength > currentQueueLength) {
-             const addedCount = newQueueLength - currentQueueLength;
-             if (addedCount > 0) {
-                toast.success(`Đã tự động thêm ${addedCount} mục mới vào hàng đợi!`);
-             }
+          if (newItemsAddedCount > 0) {
+            toast.success(`Đã tự động thêm ${newItemsAddedCount} mục mới vào hàng đợi!`);
           }
         } else {
           console.error("Dữ liệu trả về không phải là một mảng.");
@@ -42,11 +50,11 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
       }
     };
 
-    fetchAndProcessData(); // Chạy ngay lần đầu
-    const intervalId = setInterval(fetchAndProcessData, 5000); // Chạy mỗi 5 giây
+    fetchAndProcessData();
+    const intervalId = setInterval(fetchAndProcessData, 5000);
 
-    return () => clearInterval(intervalId); // Dọn dẹp khi component unmount
-  }, [dispatch, presentationQueue?.data.length]);
+    return () => clearInterval(intervalId);
+  }, [dispatch]);
 
   const handleAddToQueue = (row: Record<string, any>) => {
     dispatch({ type: 'ADD_TO_QUEUE', payload: { item: row } });
