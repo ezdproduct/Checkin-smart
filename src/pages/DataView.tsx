@@ -43,7 +43,7 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
         const existingIds = new Set([...currentQueue.map(i => i.row_number), ...currentInput.map(i => i.row_number)]);
         
         const newItems = data.filter(item => !existingIds.has(item.row_number));
-        const newItemsForQueue = newItems.filter(item => item.checkin === true);
+        const newItemsForQueue = newItems.filter(item => String(item.checkin).toLowerCase() === 'true');
         
         dispatch({ type: 'PROCESS_FETCHED_DATA', payload: { data } });
 

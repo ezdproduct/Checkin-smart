@@ -216,8 +216,10 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
 
         const newItems = fetchedData.filter(item => !existingIds.has(item.row_number));
 
-        const newItemsForQueue = newItems.filter(item => item.checkin === true);
-        const newItemsForInput = newItems.filter(item => item.checkin !== true);
+        const isCheckedIn = (item: any) => String(item.checkin).toLowerCase() === 'true';
+
+        const newItemsForQueue = newItems.filter(isCheckedIn);
+        const newItemsForInput = newItems.filter(item => !isCheckedIn(item));
 
         const newQueueData = [...currentQueue, ...newItemsForQueue];
         const newInputData = [...currentInput, ...newItemsForInput];
