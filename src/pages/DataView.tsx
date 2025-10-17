@@ -21,7 +21,7 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
   useEffect(() => {
     const fetchAndProcessData = async () => {
       try {
-        const response = await fetch('https://n8n.probase.tech/webhook/checkin');
+        const response = await fetch(`https://n8n.probase.tech/webhook/checkin?t=${Date.now()}`);
         if (!response.ok) {
           throw new Error(`Lỗi mạng: ${response.statusText}`);
         }
