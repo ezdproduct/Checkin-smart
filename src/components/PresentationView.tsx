@@ -231,7 +231,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
               className="absolute top-0 left-0 w-full h-full object-cover"
             />
         )}
-        {currentSlide.elements.map(el => <div key={el.id}>{renderElement(el)}</div>)}
+        {currentSlide.elements.map(el => <div key={`${currentSlide.id}-${el.id}`}>{renderElement(el)}</div>)}
       </div>
       {contextMenu.visible && (
         <ContextMenu x={contextMenu.x} y={contextMenu.y} onClose={closeContextMenu}>
