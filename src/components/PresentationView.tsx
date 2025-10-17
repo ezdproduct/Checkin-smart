@@ -160,7 +160,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
 
         const transitionTimer = setTimeout(() => {
             setSlideState(prevState => ({ ...prevState, previous: null, isTransitioning: false }));
-        }, 1000); // Duration of the ripple animation
+        }, 1000); // Duration of the fade animation
 
         const slideTimer = setTimeout(() => {
             dispatch({ type: 'MOVE_QUEUE_ITEM_TO_PRESENTED', payload: { item: nextItemInQueue } });
@@ -278,6 +278,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
                 slideDesignDimensions={slideDesignDimensions}
                 autoplayDuration={autoplayDuration}
                 mode={mode}
+                className={slideState.isTransitioning ? 'animate-fade-out' : ''}
             />
         )}
         <SlideComponent 
@@ -286,7 +287,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
             slideDesignDimensions={slideDesignDimensions}
             autoplayDuration={autoplayDuration}
             mode={mode}
-            className={slideState.isTransitioning ? 'animate-ripple-in' : ''}
+            className={slideState.isTransitioning ? 'animate-fade-in' : ''}
         />
       </div>
       {contextMenu.visible && (
