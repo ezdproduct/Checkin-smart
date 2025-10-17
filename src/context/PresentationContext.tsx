@@ -19,7 +19,6 @@ type Action =
   | { type: 'ADD_TO_QUEUE'; payload: { item: Record<string, any> } }
   | { type: 'REMOVE_FROM_QUEUE'; payload: { itemIndex: number } }
   | { type: 'CLEAR_QUEUE' }
-  | { type: 'PROCESS_FIRST_QUEUE_ITEM' }
   | { type: 'PROCESS_FETCHED_DATA'; payload: { data: Record<string, any>[] } };
 
 const createNewSlide = (): Slide => ({
@@ -201,17 +200,6 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
             ...state,
             dataSources: state.dataSources.map(ds => 
                 ds.id === 'presentation-queue' ? { ...ds, data: [] } : ds
-            ),
-        };
-    }
-    case 'PROCESS_FIRST_QUEUE_ITEM': {
-        const queue = state.dataSources.find(ds => ds.id === 'presentation-queue');
-        if (!queue || queue.data.length === 0) return state;
-        const newQueueData = queue.data.slice(1);
-        return {
-            ...state,
-            dataSources: state.dataSources.map(ds =>
-                ds.id === 'presentation-queue' ? { ...ds, data: newQueueData } : ds
             ),
         };
     }
