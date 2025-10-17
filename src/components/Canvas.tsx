@@ -93,17 +93,27 @@ export const Canvas: React.FC<CanvasProps> = ({ slide, dispatch, selectedElement
 
   const slideStyle: React.CSSProperties = {
     backgroundColor: slide.backgroundColor,
-    backgroundImage: slide.backgroundImage ? `url(${convertToDirectUrl(slide.backgroundImage)})` : 'none',
+    backgroundImage: slide.backgroundVideo ? 'none' : (slide.backgroundImage ? `url(${convertToDirectUrl(slide.backgroundImage)})` : 'none'),
     backgroundSize: slide.backgroundSize ? `${slide.backgroundSize}%` : 'cover',
     backgroundPosition: `${slide.backgroundPositionX || 50}% ${slide.backgroundPositionY || 50}%`,
   };
 
   return (
     <div
-      className="w-full h-full relative select-none"
+      className="w-full h-full relative select-none overflow-hidden"
       style={slideStyle}
       onMouseDown={handleMouseDownOnCanvas}
     >
+      {slide.backgroundVideo && (
+        <video
+          key={slide.backgroundVideo}
+          src={convertToDirectUrl(slide.backgroundVideo)}
+          muted
+          autoPlay
+          loop
+          className="absolute top-0 left-0 w-full h-full object-cover"
+        />
+      )}
       {/* Safe Zone Outline */}
       <div className="absolute top-4 left-4 right-4 bottom-4 border-2 border-dashed border-gray-300 pointer-events-none rounded-md"></div>
       

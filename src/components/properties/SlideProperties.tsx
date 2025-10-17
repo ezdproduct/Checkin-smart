@@ -18,27 +18,42 @@ const baseButtonClasses = "w-full p-2 rounded-md text-sm font-medium transition-
 
 interface SlidePropertiesProps {
     slide: Slide;
-    onUpdateSlide: (updates: Partial<Pick<Slide, 'backgroundColor' | 'backgroundImage' | 'backgroundPositionX' | 'backgroundPositionY' | 'backgroundSize'>>) => void;
+    onUpdateSlide: (updates: Partial<Slide>) => void;
     onOpenBackgroundEditor: (imageSrc: string) => void;
 }
 
 export const SlideProperties: React.FC<SlidePropertiesProps> = ({ slide, onUpdateSlide, onOpenBackgroundEditor }) => {
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
+    const videoInputRef = useRef<HTMLInputElement>(null);
 
-    const handleBgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = (event) => {
             const base64Src = event.target?.result as string;
-            onOpenBackgroundEditor(base64Src);
+            if (type === 'image') {
+                onOpenBackgroundEditor(base64Src);
+            } else {
+                onUpdateSlide({ backgroundVideo: base64Src, backgroundImage: undefined });
+            }
         };
         reader.readAsDataURL(file);
 
         if (e.target) {
             e.target.value = '';
         }
+    };
+
+    const handleRemoveBackground = () => {
+        onUpdateSlide({
+            backgroundImage: undefined,
+            backgroundVideo: undefined,
+            backgroundPositionX: 50,
+            backgroundPositionY: 50,
+            backgroundSize: 100,
+        });
     };
 
     return (
@@ -58,26 +73,43 @@ export const SlideProperties: React.FC<SlidePropertiesProps> = ({ slide, onUpdat
                 </div>
             </PropInput>
             
-            <PropInput label="Ảnh nền">
+            <PropInput label="Nền đa phương tiện">
                 <input
                     type="file"
-                    ref={fileInputRef}
-                    onChange={handleBgImageUpload}
+                    ref={imageInputRef}
+                    onChange={(e) => handleFileUpload(e, 'image')}
                     accept="image/png, image/jpeg, image/gif, image/webp"
+                    style={{ display: 'none' }}
+                />
+                <input
+                    type="file"
+                    ref={videoInputRef}
+                    onChange={(e) => handleFileUpload(e, 'video')}
+                    accept="video/mp4,video/webm"
                     style={{ display: 'none' }}
                 />
                 {slide.backgroundImage ? (
                     <div className="space-y-2">
                         <img src={slide.backgroundImage} alt="Xem trước ảnh nền" className="w-full rounded border" />
                         <div className="flex space-x-2">
-                            <button onClick={() => onUpdateSlide({ backgroundImage: undefined, backgroundPositionX: 50, backgroundPositionY: 50, backgroundSize: 100 })} className={`${baseButtonClasses} border border-red-500/50 text-red-500 hover:bg-red-500/10`}>Xóa</button>
+                            <button onClick={handleRemoveBackground} className={`${baseButtonClasses} border border-red-500/50 text-red-500 hover:bg-red-500/10`}>Xóa</button>
                             <button onClick={() => onOpenBackgroundEditor(slide.backgroundImage!)} className={`${baseButtonClasses} border border-primary-500/50 text-primary-500 hover:bg-primary-500/10`}>Điều chỉnh</button>
                         </div>
                     </div>
+                ) : slide.backgroundVideo ? (
+                    <div className="space-y-2">
+                        <video src={slide.backgroundVideo} muted autoPlay loop className="w-full rounded border" />
+                        <button onClick={handleRemoveBackground} className={`${baseButtonClasses} border border-red-500/50 text-red-500 hover:bg-red-500/10`}>Xóa video</button>
+                    </div>
                 ) : (
-                    <button onClick={() => fileInputRef.current?.click()} className="w-full p-4 border-2 border-dashed border-gray-300 rounded-md hover:bg-gray-100 hover:border-primary-500 transition-colors">
-                        Tải ảnh lên
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button onClick={() => imageInputRef.current?.click()} className="p-4 border-2 border-dashed border-gray-300 rounded-md hover:bg-gray-100 hover:border-primary-500 transition-colors text-sm">
+                            Tải ảnh lên
+                        </button>
+                        <button onClick={() => videoInputRef.current?.click()} className="p-4 border-2 border-dashed border-gray-300 rounded-md hover:bg-gray-100 hover:border-primary-500 transition-colors text-sm">
+                            Tải video lên
+                        </button>
+                    </div>
                 )}
             </PropInput>
         </>

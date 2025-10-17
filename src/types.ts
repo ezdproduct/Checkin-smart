@@ -40,6 +40,7 @@ export interface Slide {
   elements: PresentationElement[];
   backgroundColor: string;
   backgroundImage?: string;
+  backgroundVideo?: string;
   backgroundPositionX?: number;
   backgroundPositionY?: number;
   backgroundSize?: number;

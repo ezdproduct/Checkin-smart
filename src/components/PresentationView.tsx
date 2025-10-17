@@ -188,7 +188,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
   
   const slideStyle: React.CSSProperties = {
     backgroundColor: currentSlide.backgroundColor,
-    backgroundImage: currentSlide.backgroundImage ? `url(${convertToDirectUrl(currentSlide.backgroundImage)})` : 'none',
+    backgroundImage: currentSlide.backgroundVideo ? 'none' : (currentSlide.backgroundImage ? `url(${convertToDirectUrl(currentSlide.backgroundImage)})` : 'none'),
     backgroundSize: currentSlide.backgroundSize ? `${currentSlide.backgroundSize}%` : 'cover',
     backgroundPosition: `${currentSlide.backgroundPositionX || 50}% ${currentSlide.backgroundPositionY || 50}%`,
     width: `${slideDesignDimensions.width}px`,
@@ -211,6 +211,16 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
           transform: `translate(-50%, -50%) scale(${scale})`,
         }}
       >
+        {currentSlide.backgroundVideo && (
+            <video
+              key={currentSlide.id}
+              src={convertToDirectUrl(currentSlide.backgroundVideo)}
+              muted
+              autoPlay
+              loop
+              className="absolute top-0 left-0 w-full h-full object-cover"
+            />
+        )}
         {currentSlide.elements.map(el => <div key={el.id}>{renderElement(el)}</div>)}
       </div>
       {contextMenu.visible && (

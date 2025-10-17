@@ -41,7 +41,7 @@ export const SlideThumbnail: React.FC<SlideThumbnailProps> = ({ slide, index, is
           className="w-full h-full bg-cover bg-center rounded relative overflow-hidden"
           style={{
               backgroundColor: slide.backgroundColor,
-              backgroundImage: slide.backgroundImage ? `url(${slide.backgroundImage})` : 'none',
+              backgroundImage: slide.backgroundVideo ? 'none' : (slide.backgroundImage ? `url(${slide.backgroundImage})` : 'none'),
               backgroundSize: slide.backgroundSize ? `${slide.backgroundSize}%` : 'cover',
               backgroundPosition: `${slide.backgroundPositionX || 50}% ${slide.backgroundPositionY || 50}%`,
           }}
