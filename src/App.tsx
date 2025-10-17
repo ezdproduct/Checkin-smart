@@ -7,15 +7,14 @@ import { EditorView } from '@/src/pages/EditorView';
 import { DataView } from '@/src/pages/DataView';
 import { MainLayout } from '@/src/layouts/MainLayout';
 import { usePresentationWindow } from '@/src/hooks/usePresentationWindow';
-import { useBroadcastChannel } from '@/src/hooks/useBroadcastChannel';
-import { ElementType } from './types';
-import type { Slide, TextElement, ImageElement, PresentationState } from './types';
+import type { Slide, PresentationState } from './types';
 import toast from 'react-hot-toast';
 
 const AppContent: React.FC = () => {
-  const { state } = usePresentation();
+  const { state, dispatch } = usePresentation();
   const [presentationProps, setPresentationProps] = useState<{ 
     slides: Slide[]; 
+    settings: { mode: 'manual' | 'autoplay' };
     initialSlideIndex: number;
   } | null>(null);
   
@@ -24,76 +23,42 @@ const AppContent: React.FC = () => {
   }, []);
 
   const { openPresentationWindow, container } = usePresentationWindow(handleExitPresentation);
-  const { postMessage } = useBroadcastChannel(() => {});
 
-  const generateSlidesForPresentation = useCallback((currentState: PresentationState): Slide[] => {
-    const presentationQueue = currentState.dataSources.find(ds => ds.id === 'presentation-queue');
-    const templateSlide = currentState.slides.find(s => s.elements.some(e => e.dataSourceId));
-    
-    if (presentationQueue && presentationQueue.data.length > 0 && templateSlide) {
-        const generatedSlides = presentationQueue.data.map((row, index) => {
-            const newSlide: Slide = JSON.parse(JSON.stringify(templateSlide));
-            newSlide.id = `${templateSlide.id}-presented-${index}`;
-            newSlide.dataSourceId = presentationQueue.id;
-            newSlide.dataRowIndex = index;
-
-            newSlide.elements = newSlide.elements.map(el => {
-                const newEl = { ...el };
-                if ((newEl.type === ElementType.TEXT || newEl.type === ElementType.IMAGE) && newEl.dataColumn) {
-                    const valueFromData = row[newEl.dataColumn];
-                    if (valueFromData !== undefined) {
-                        if (newEl.type === ElementType.TEXT) (newEl as TextElement).text = String(valueFromData);
-                        else if (newEl.type === ElementType.IMAGE) (newEl as ImageElement).src = String(valueFromData);
-                    }
-                }
-                return newEl;
-            });
-            return newSlide;
-        });
-        
-        const otherSlides = currentState.slides.filter(s => s.id !== templateSlide.id);
-        return [...generatedSlides, ...otherSlides];
-    }
-    
-    return currentState.slides;
-  }, []);
-
-  const startPresentation = useCallback((options?: { startSlideId?: string, startIndex?: number }) => {
-    const slidesToPresent = generateSlidesForPresentation(state);
+  const startPresentation = useCallback((settings: { mode: 'manual' | 'autoplay' }, options?: { startSlideId?: string, startIndex?: number }) => {
+    const slidesToPresent = state.slides;
     
     if (slidesToPresent.length === 0) {
-        alert("Không có gì để trình chiếu.");
+        toast.error("Không có gì để trình chiếu.");
         return;
     }
 
     let initialSlideIndex = options?.startIndex ?? 0;
     if (options?.startSlideId) {
-        const foundIndex = slidesToPresent.findIndex(s => s.id === options.startSlideId || (options.startSlideId && s.id.startsWith(options.startSlideId)));
+        const foundIndex = slidesToPresent.findIndex(s => s.id === options.startSlideId);
         if (foundIndex > -1) initialSlideIndex = foundIndex;
     }
 
     setPresentationProps({ 
       slides: slidesToPresent, 
+      settings,
       initialSlideIndex 
     });
     openPresentationWindow();
-  }, [state, generateSlidesForPresentation, openPresentationWindow]);
+  }, [state.slides, openPresentationWindow]);
 
-  const handlePresentQueue = useCallback((options?: { startIndex?: number }) => {
-    if (presentationProps && container) {
-      // Nếu cửa sổ đang mở, chỉ gửi lệnh chuyển slide
-      postMessage({ type: 'GOTO_SLIDE', payload: { index: options?.startIndex ?? 0 } });
-    } else {
-      // Nếu cửa sổ chưa mở, bắt đầu trình chiếu
-      startPresentation(options);
+  const handlePresentQueue = useCallback(() => {
+    if (state.slides.length < 2) {
+      toast.error("Cần có ít nhất 2 slide: 1 slide chào mừng và 1 slide mẫu dữ liệu.");
+      return;
     }
-  }, [presentationProps, container, startPresentation, postMessage]);
+    startPresentation({ mode: 'autoplay' });
+  }, [startPresentation, state.slides.length]);
 
   return (
     <>
       <div className="flex flex-col min-h-screen font-sans bg-surface-200 text-text-900 overflow-hidden">
         <Routes>
-          <Route element={<MainLayout onStartPresentation={startPresentation} />}>
+          <Route element={<MainLayout onStartPresentation={(opts) => startPresentation({ mode: 'manual' }, opts)} />}>
             <Route path="/" element={<Navigate to="/editor" replace />} />
             <Route path="editor" element={<EditorView />} />
             <Route path="data" element={
@@ -110,6 +75,9 @@ const AppContent: React.FC = () => {
           onExit={handleExitPresentation}
           initialSlideIndex={presentationProps.initialSlideIndex}
           autoFullscreen={true}
+          mode={presentationProps.settings.mode}
+          dataSources={state.dataSources}
+          dispatch={dispatch}
         />,
         container
       )}

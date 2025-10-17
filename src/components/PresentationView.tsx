@@ -1,46 +1,77 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { Slide, PresentationElement, TextElement, ImageElement } from '@/src/types';
+import type { Slide, PresentationElement, TextElement, ImageElement, DataSource } from '@/src/types';
 import { ElementType } from '@/src/types';
 import { getSlideDimensions, convertToDirectUrl } from '@/src/utils/presentationUtils';
 import { MaximizeIcon, MinimizeIcon } from './Icons';
-import { useBroadcastChannel } from '@/src/hooks/useBroadcastChannel';
+
+const populateSlideWithData = (templateSlide: Slide, dataRow: Record<string, any>): Slide => {
+    const newSlide: Slide = JSON.parse(JSON.stringify(templateSlide));
+    newSlide.id = `${templateSlide.id}-presented-${Date.now()}`;
+
+    newSlide.elements = newSlide.elements.map(el => {
+        const newEl = { ...el };
+        if ((newEl.type === ElementType.TEXT || newEl.type === ElementType.IMAGE) && newEl.dataColumn) {
+            const valueFromData = dataRow[newEl.dataColumn];
+            if (valueFromData !== undefined) {
+                if (newEl.type === ElementType.TEXT) (newEl as TextElement).text = String(valueFromData);
+                else if (newEl.type === ElementType.IMAGE) (newEl as ImageElement).src = String(valueFromData);
+            }
+        }
+        return newEl;
+    });
+    return newSlide;
+};
 
 interface PresentationViewProps {
   slides: Slide[];
   onExit: () => void;
   initialSlideIndex: number;
   autoFullscreen?: boolean;
+  mode: 'manual' | 'autoplay';
+  dataSources: DataSource[];
+  dispatch: React.Dispatch<any>;
 }
 
-export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onExit, initialSlideIndex, autoFullscreen }) => {
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(initialSlideIndex);
+export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onExit, initialSlideIndex, autoFullscreen, mode, dataSources, dispatch }) => {
+  const [currentSlide, setCurrentSlide] = useState<Slide>(slides[initialSlideIndex]);
+  const [manualSlideIndex, setManualSlideIndex] = useState(initialSlideIndex);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [scale, setScale] = useState(1);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const presentationRootRef = useRef<HTMLDivElement>(null);
-
-  useBroadcastChannel(useCallback((message) => {
-    if (message.type === 'GOTO_SLIDE') {
-      setCurrentSlideIndex(message.payload.index);
-    }
-  }, []));
+  const presentationQueue = dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
 
   const slideDesignDimensions = getSlideDimensions('16:9');
 
+  useEffect(() => {
+    if (mode !== 'autoplay') {
+        setCurrentSlide(slides[manualSlideIndex]);
+        return;
+    }
+
+    const welcomeSlide = slides[0];
+    const templateSlide = slides[1]; 
+    const currentQueueItem = presentationQueue[0];
+
+    if (currentQueueItem && templateSlide) {
+        const populatedSlide = populateSlideWithData(templateSlide, currentQueueItem);
+        setCurrentSlide(populatedSlide);
+
+        const timer = setTimeout(() => {
+            dispatch({ type: 'PROCESS_FIRST_QUEUE_ITEM' });
+        }, 3000);
+
+        return () => clearTimeout(timer);
+    } else {
+        setCurrentSlide(welcomeSlide);
+    }
+  }, [mode, presentationQueue, slides, manualSlideIndex, dispatch]);
+
   const nextSlide = useCallback(() => {
-    setCurrentSlideIndex(prev => (prev + 1) % slides.length);
+    setManualSlideIndex(prev => (prev + 1) % slides.length);
   }, [slides.length]);
 
   const prevSlide = useCallback(() => {
-    setCurrentSlideIndex(prev => (prev - 1 + slides.length) % slides.length);
-  }, [slides.length]);
-
-  const goToFirstSlide = useCallback(() => {
-    setCurrentSlideIndex(0);
-  }, []);
-
-  const goToLastSlide = useCallback(() => {
-    setCurrentSlideIndex(slides.length - 1);
+    setManualSlideIndex(prev => (prev - 1 + slides.length) % slides.length);
   }, [slides.length]);
 
   useEffect(() => {
@@ -62,23 +93,17 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
   
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') {
-        nextSlide();
-      } else if (e.key === 'ArrowLeft') {
-        prevSlide();
-      } else if (e.key === 'Home') {
-        e.preventDefault();
-        goToFirstSlide();
-      } else if (e.key === 'End') {
-        e.preventDefault();
-        goToLastSlide();
-      } else if (e.key === 'Escape') {
-        window.close();
+      if (mode === 'manual') {
+        if (e.key === 'ArrowRight') nextSlide();
+        else if (e.key === 'ArrowLeft') prevSlide();
+      }
+      if (e.key === 'Escape') {
+        onExit();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [nextSlide, prevSlide, goToFirstSlide, goToLastSlide]);
+  }, [mode, nextSlide, prevSlide, onExit]);
 
   useEffect(() => {
     const doc = presentationRootRef.current?.ownerDocument;
@@ -89,9 +114,9 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
 
     if (autoFullscreen) {
       const timer = setTimeout(() => {
-        if (!doc.fullscreenElement) {
+        if (doc.documentElement && !doc.fullscreenElement) {
           doc.documentElement.requestFullscreen().catch(err => {
-            console.warn(`Tự động toàn màn hình thất bại: ${err.message}. Cần có tương tác của người dùng.`);
+            console.warn(`Tự động toàn màn hình thất bại: ${err.message}.`);
           });
         }
       }, 100);
@@ -100,35 +125,16 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
         doc.removeEventListener('fullscreenchange', handleFullscreenChange);
       };
     }
-
     return () => doc.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [autoFullscreen]);
 
   const toggleFullscreen = () => {
-    const doc = presentationRootRef.current?.ownerDocument;
+    const doc = presentationRootRef.current?.ownerDocument?.documentElement;
     if (!doc) return;
-
-    if (!doc.fullscreenElement) {
-      doc.documentElement.requestFullscreen().catch(err => {
-        console.error(`Lỗi toàn màn hình: ${err.message}`);
-      });
-    } else {
-      doc.exitFullscreen();
-    }
+    if (!isFullscreen) doc.requestFullscreen().catch(console.error);
+    else document.exitFullscreen();
   };
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setContextMenu({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleClick = () => {
-    if (contextMenu) {
-      setContextMenu(null);
-    }
-  };
-
-  const currentSlide = slides[currentSlideIndex];
   if (!currentSlide) return null;
 
   const renderElement = (element: PresentationElement) => {
@@ -181,8 +187,6 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
     <div 
       ref={presentationRootRef} 
       className="fixed inset-0 bg-black overflow-hidden"
-      onContextMenu={handleContextMenu}
-      onClick={handleClick}
     >
       <div 
         className="relative overflow-hidden"
@@ -196,23 +200,15 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
       >
         {currentSlide.elements.map(el => <div key={el.id}>{renderElement(el)}</div>)}
       </div>
-
-      {contextMenu && (
-        <div 
-          style={{ top: contextMenu.y, left: contextMenu.x }}
-          className="absolute flex items-center space-x-4 p-2 bg-black/60 rounded-lg backdrop-blur-sm text-white z-20"
+      <div className="absolute bottom-4 right-4 flex items-center space-x-2 p-2 bg-black/50 rounded-lg text-white z-20">
+        <button 
+            onClick={toggleFullscreen}
+            className="p-2 hover:bg-white/20 rounded-full transition-colors"
+            title={isFullscreen ? 'Thoát toàn màn hình' : 'Vào toàn màn hình'}
         >
-            <span className="font-mono px-2">{currentSlideIndex + 1} / {slides.length}</span>
-            <div className="w-px h-6 bg-white/30"></div>
-            <button 
-                onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-                className="p-2 hover:bg-white/20 rounded-full transition-colors"
-                title={isFullscreen ? 'Thoát toàn màn hình' : 'Vào toàn màn hình'}
-            >
-                {isFullscreen ? <MinimizeIcon className="w-6 h-6" /> : <MaximizeIcon className="w-6 h-6" />}
-            </button>
-        </div>
-      )}
+            {isFullscreen ? <MinimizeIcon className="w-5 h-5" /> : <MaximizeIcon className="w-5 h-5" />}
+        </button>
+      </div>
     </div>
   );
 };
