@@ -26,22 +26,34 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
           throw new Error(`Lỗi mạng: ${response.statusText}`);
         }
         const data = await response.json();
-        if (Array.isArray(data)) {
-          const currentQueue = stateRef.current.dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
-          const currentInput = stateRef.current.dataSources.find(ds => ds.id === 'data-input')?.data || [];
-          const existingIds = new Set([...currentQueue.map(i => i.id), ...currentInput.map(i => i.id)]);
-          
-          const newItems = data.filter(item => !existingIds.has(item.id));
-          
-          dispatch({ type: 'PROCESS_FETCHED_DATA', payload: { data } });
-
-          if (newItems.length > 0) {
-            toast.success(`Đã tự động thêm ${newItems.length} mục mới vào hàng đợi!`);
-          }
-        } else {
+        
+        if (!Array.isArray(data)) {
           console.error("Dữ liệu trả về không phải là một mảng.");
+          return; 
         }
+
+        if (data.length > 0 && data[0].id === undefined) {
+          toast.error("Dữ liệu trả về không hợp lệ (thiếu ID).");
+          console.error("Dữ liệu không chứa thuộc tính 'id'.", data[0]);
+          return;
+        }
+
+        const currentQueue = stateRef.current.dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
+        const currentInput = stateRef.current.dataSources.find(ds => ds.id === 'data-input')?.data || [];
+        const existingIds = new Set([...currentQueue.map(i => i.id), ...currentInput.map(i => i.id)]);
+        
+        const newItems = data.filter(item => !existingIds.has(item.id));
+        
+        if (newItems.length > 0) {
+          dispatch({ type: 'PROCESS_FETCHED_DATA', payload: { data } });
+          toast.success(`Đã tự động thêm ${newItems.length} mục mới vào hàng đợi!`);
+        } else {
+          // Vẫn dispatch để cập nhật bảng dữ liệu đầu vào nếu có thay đổi khác
+          dispatch({ type: 'PROCESS_FETCHED_DATA', payload: { data } });
+        }
+
       } catch (error) {
+        toast.error("Không thể tải dữ liệu tự động.");
         console.error("Không thể tải dữ liệu:", error);
       }
     };
