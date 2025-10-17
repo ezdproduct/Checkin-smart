@@ -179,9 +179,12 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
     case 'CLEAR_QUEUE': {
         return {
             ...state,
-            dataSources: state.dataSources.map(ds => 
-                ds.id === 'presentation-queue' ? { ...ds, data: [] } : ds
-            ),
+            dataSources: state.dataSources.map(ds => {
+                if (ds.id === 'presentation-queue' || ds.id === 'presented-items') {
+                    return { ...ds, data: [] };
+                }
+                return ds;
+            }),
         };
     }
     case 'PROCESS_FETCHED_DATA': {

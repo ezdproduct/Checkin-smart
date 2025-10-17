@@ -66,7 +66,7 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
   };
 
   const handleClearQueue = () => {
-    if (window.confirm('Bạn có chắc muốn xóa toàn bộ hàng đợi không?')) {
+    if (window.confirm('Bạn có chắc muốn xóa toàn bộ hàng đợi và lịch sử đã trình chiếu không?')) {
       dispatch({ type: 'CLEAR_QUEUE' });
     }
   };
@@ -85,9 +85,9 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
             <div className="flex items-center gap-2 flex-shrink-0 mt-1">
                 <button
                     onClick={handleClearQueue}
-                    disabled={!presentationQueue || presentationQueue.data.length === 0}
+                    disabled={(!presentationQueue || presentationQueue.data.length === 0) && (!presentedItems || presentedItems.data.length === 0)}
                     className="flex items-center gap-2 px-3 py-2 text-sm bg-white border rounded-md text-red-600 border-red-200 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Xóa hàng đợi"
+                    title="Xóa hàng đợi và lịch sử"
                 >
                     <EraserIcon className="w-4 h-4" />
                     <span>Xóa hết</span>
