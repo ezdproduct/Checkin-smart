@@ -167,8 +167,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
     // Transition to next data slide
     if (nextItemInQueue) {
         let templateSlide: Slide | undefined;
-        // Assuming the gender field is named 'gender'
-        if (String(nextItemInQueue.gender).trim().toLowerCase() === 'nữ' && femaleTemplateSlide) {
+        if (String(nextItemInQueue['Giới tính']).trim().toLowerCase() === 'nữ' && femaleTemplateSlide) {
             templateSlide = femaleTemplateSlide;
         } else if (maleTemplateSlide) {
             templateSlide = maleTemplateSlide; // Default to male template
