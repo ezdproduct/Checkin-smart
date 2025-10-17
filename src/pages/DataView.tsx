@@ -15,7 +15,7 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
 
   const handleAddToQueue = (row: Record<string, any>) => {
     dispatch({ type: 'ADD_TO_QUEUE', payload: { item: row } });
-    toast.success('Đã thêm vào hàng đợi!');
+    toast.success('Đã chuyển vào hàng đợi!');
   };
 
   const handleRemoveFromQueue = (rowIndex: number) => {

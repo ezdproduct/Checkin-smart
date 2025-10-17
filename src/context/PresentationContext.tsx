@@ -166,14 +166,20 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
     case 'ADD_TO_QUEUE': {
         const { item } = action.payload;
         const queue = state.dataSources.find(ds => ds.id === 'presentation-queue');
-        if (!queue) return state;
+        const dataInput = state.dataSources.find(ds => ds.id === 'data-input');
+
+        if (!queue || !dataInput) return state;
         
         const newQueueData = [...queue.data, item];
+        const newDataInputData = dataInput.data.filter(d => d !== item);
+        
         return {
             ...state,
-            dataSources: state.dataSources.map(ds => 
-                ds.id === 'presentation-queue' ? { ...ds, data: newQueueData } : ds
-            ),
+            dataSources: state.dataSources.map(ds => {
+                if (ds.id === 'presentation-queue') return { ...ds, data: newQueueData };
+                if (ds.id === 'data-input') return { ...ds, data: newDataInputData };
+                return ds;
+            }),
         };
     }
     case 'REMOVE_FROM_QUEUE': {
