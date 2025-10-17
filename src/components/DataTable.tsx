@@ -1,15 +1,14 @@
 import React from 'react';
 import { isPotentialImageUrl, convertToDirectUrl } from '@/src/utils/presentationUtils';
-import { PlayIcon } from './Icons';
 
 interface DataTableProps {
   data: Record<string, any>[];
-  onPresentRow: (rowIndex: number) => void;
+  renderRowActions: (row: Record<string, any>, rowIndex: number) => React.ReactNode;
 }
 
-export const DataTable: React.FC<DataTableProps> = ({ data, onPresentRow }) => {
+export const DataTable: React.FC<DataTableProps> = ({ data, renderRowActions }) => {
   if (!data || data.length === 0) {
-    return <div className="text-center text-gray-500 py-10">Chưa có dữ liệu. Hãy kết nối với một nguồn dữ liệu.</div>;
+    return <div className="text-center text-gray-500 py-10">Chưa có dữ liệu.</div>;
   }
 
   const headers = Object.keys(data[0]);
@@ -24,7 +23,7 @@ export const DataTable: React.FC<DataTableProps> = ({ data, onPresentRow }) => {
                 {header}
               </th>
             ))}
-            <th scope="col" className="px-6 py-3"></th>
+            <th scope="col" className="px-6 py-3 text-right">Hành động</th>
           </tr>
         </thead>
         <tbody>
@@ -43,13 +42,7 @@ export const DataTable: React.FC<DataTableProps> = ({ data, onPresentRow }) => {
                 )
               })}
               <td className="px-6 py-4 text-right">
-                <button 
-                  onClick={() => onPresentRow(rowIndex)}
-                  className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-600/10 rounded-full transition-colors"
-                  title={`Trình chiếu từ hàng ${rowIndex + 1}`}
-                >
-                  <PlayIcon className="w-5 h-5" />
-                </button>
+                {renderRowActions(row, rowIndex)}
               </td>
             </tr>
           ))}

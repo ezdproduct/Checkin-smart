@@ -25,7 +25,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ onStartPresentation }) =
       })
       .then(data => {
         if (Array.isArray(data)) {
-          dispatch({ type: 'UPDATE_DATA_SOURCE', payload: { id: 'presentation-queue', data } });
+          dispatch({ type: 'UPDATE_DATA_SOURCE', payload: { id: 'data-input', data } });
         } else {
           throw new Error("Dữ liệu trả về không phải là một mảng.");
         }

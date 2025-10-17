@@ -15,7 +15,10 @@ type Action =
   | { type: 'SELECT_ELEMENT'; payload: { elementId: string | null } }
   | { type: 'UPDATE_SLIDE_BACKGROUND'; payload: { slideId: string; background: Partial<Pick<Slide, 'backgroundColor' | 'backgroundImage' | 'backgroundPositionX' | 'backgroundPositionY' | 'backgroundSize'>> } }
   | { type: 'UPDATE_TITLE'; payload: { title: string } }
-  | { type: 'UPDATE_DATA_SOURCE'; payload: { id: string; data: Record<string, any>[] } };
+  | { type: 'UPDATE_DATA_SOURCE'; payload: { id: string; data: Record<string, any>[] } }
+  | { type: 'ADD_TO_QUEUE'; payload: { item: Record<string, any> } }
+  | { type: 'REMOVE_FROM_QUEUE'; payload: { itemIndex: number } }
+  | { type: 'CLEAR_QUEUE' };
 
 const createNewSlide = (): Slide => ({
   id: `slide-${Date.now()}`,
@@ -39,6 +42,7 @@ const initialState: PresentationState = {
   selectedElementId: null,
   title: 'Bài thuyết trình',
   dataSources: [
+    { id: 'data-input', name: 'Dữ liệu đầu vào', data: [] },
     { id: 'presentation-queue', name: 'Hàng đợi trình chiếu', data: [] }
   ],
 };
@@ -158,6 +162,39 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
         ...state,
         dataSources: state.dataSources.map(ds => ds.id === id ? { ...ds, data } : ds),
       };
+    }
+    case 'ADD_TO_QUEUE': {
+        const { item } = action.payload;
+        const queue = state.dataSources.find(ds => ds.id === 'presentation-queue');
+        if (!queue) return state;
+        
+        const newQueueData = [...queue.data, item];
+        return {
+            ...state,
+            dataSources: state.dataSources.map(ds => 
+                ds.id === 'presentation-queue' ? { ...ds, data: newQueueData } : ds
+            ),
+        };
+    }
+    case 'REMOVE_FROM_QUEUE': {
+        const { itemIndex } = action.payload;
+        const queue = state.dataSources.find(ds => ds.id === 'presentation-queue');
+        if (!queue) return state;
+        const newQueueData = queue.data.filter((_, index) => index !== itemIndex);
+        return {
+            ...state,
+            dataSources: state.dataSources.map(ds => 
+                ds.id === 'presentation-queue' ? { ...ds, data: newQueueData } : ds
+            ),
+        };
+    }
+    case 'CLEAR_QUEUE': {
+        return {
+            ...state,
+            dataSources: state.dataSources.map(ds => 
+                ds.id === 'presentation-queue' ? { ...ds, data: [] } : ds
+            ),
+        };
     }
     default:
       return state;
