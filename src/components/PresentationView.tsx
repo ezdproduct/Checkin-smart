@@ -125,10 +125,12 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
       current: Slide;
       previous: Slide | null;
       isTransitioning: boolean;
+      isExiting: boolean;
   }>({
       current: slides[initialSlideIndex],
       previous: null,
       isTransitioning: false,
+      isExiting: false,
   });
   const [manualSlideIndex, setManualSlideIndex] = useState(initialSlideIndex);
   const [scale, setScale] = useState(1);
@@ -141,7 +143,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
 
   useEffect(() => {
     if (mode !== 'autoplay') {
-        setSlideState({ current: slides[manualSlideIndex], previous: null, isTransitioning: false });
+        setSlideState({ current: slides[manualSlideIndex], previous: null, isTransitioning: false, isExiting: false });
         return;
     }
 
@@ -156,22 +158,31 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
             previous: prevState.current,
             current: populatedSlide,
             isTransitioning: true,
+            isExiting: false,
         }));
 
         const transitionTimer = setTimeout(() => {
             setSlideState(prevState => ({ ...prevState, previous: null, isTransitioning: false }));
-        }, 1000); // Duration of the ripple animation
+        }, 1000);
 
-        const slideTimer = setTimeout(() => {
+        const exitAnimationDuration = 1000;
+        const mainDuration = autoplayDuration > exitAnimationDuration ? autoplayDuration - exitAnimationDuration : 0;
+
+        const exitStartTimer = setTimeout(() => {
+            setSlideState(prevState => ({ ...prevState, isExiting: true }));
+        }, mainDuration);
+
+        const slideChangeTimer = setTimeout(() => {
             dispatch({ type: 'MOVE_QUEUE_ITEM_TO_PRESENTED', payload: { item: nextItemInQueue } });
         }, autoplayDuration);
 
         return () => {
             clearTimeout(transitionTimer);
-            clearTimeout(slideTimer);
+            clearTimeout(exitStartTimer);
+            clearTimeout(slideChangeTimer);
         };
     } else {
-        setSlideState({ current: welcomeSlide, previous: null, isTransitioning: false });
+        setSlideState({ current: welcomeSlide, previous: null, isTransitioning: false, isExiting: false });
     }
   }, [mode, presentationQueue, slides, manualSlideIndex, dispatch, autoplayDuration]);
 
@@ -286,7 +297,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
             slideDesignDimensions={slideDesignDimensions}
             autoplayDuration={autoplayDuration}
             mode={mode}
-            className={slideState.isTransitioning ? 'animate-ripple-in' : ''}
+            className={slideState.isExiting ? 'animate-fade-out' : (slideState.isTransitioning ? 'animate-ripple-in' : '')}
         />
       </div>
       {contextMenu.visible && (
