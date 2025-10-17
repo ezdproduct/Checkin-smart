@@ -214,18 +214,19 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
             ...currentInput.map(item => item.row_number)
         ]);
 
-        const newItemsForQueue = fetchedData.filter(item => !existingIds.has(item.row_number));
-        
-        const newQueueData = [...currentQueue, ...newItemsForQueue];
-        const newQueueIds = new Set(newQueueData.map(item => item.row_number));
+        const newItems = fetchedData.filter(item => !existingIds.has(item.row_number));
 
-        const updatedInputData = fetchedData.filter(item => !newQueueIds.has(item.row_number));
+        const newItemsForQueue = newItems.filter(item => item.checkin === true);
+        const newItemsForInput = newItems.filter(item => item.checkin !== true);
+
+        const newQueueData = [...currentQueue, ...newItemsForQueue];
+        const newInputData = [...currentInput, ...newItemsForInput];
 
         return {
             ...state,
             dataSources: state.dataSources.map(ds => {
                 if (ds.id === 'presentation-queue') return { ...ds, data: newQueueData };
-                if (ds.id === 'data-input') return { ...ds, data: updatedInputData };
+                if (ds.id === 'data-input') return { ...ds, data: newInputData };
                 return ds;
             }),
         };

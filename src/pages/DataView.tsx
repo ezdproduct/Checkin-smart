@@ -43,13 +43,12 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
         const existingIds = new Set([...currentQueue.map(i => i.row_number), ...currentInput.map(i => i.row_number)]);
         
         const newItems = data.filter(item => !existingIds.has(item.row_number));
+        const newItemsForQueue = newItems.filter(item => item.checkin === true);
         
-        if (newItems.length > 0) {
-          dispatch({ type: 'PROCESS_FETCHED_DATA', payload: { data } });
-          toast.success(`Đã tự động thêm ${newItems.length} mục mới vào hàng đợi!`);
-        } else {
-          // Vẫn dispatch để cập nhật bảng dữ liệu đầu vào nếu có thay đổi khác
-          dispatch({ type: 'PROCESS_FETCHED_DATA', payload: { data } });
+        dispatch({ type: 'PROCESS_FETCHED_DATA', payload: { data } });
+
+        if (newItemsForQueue.length > 0) {
+          toast.success(`Đã tự động thêm ${newItemsForQueue.length} mục mới vào hàng đợi!`);
         }
 
       } catch (error) {
