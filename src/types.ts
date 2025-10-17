@@ -62,4 +62,5 @@ export interface PresentationState {
   selectedElementId: string | null;
   title: string;
   dataSources: DataSource[];
+  autoplayDuration: number;
 }

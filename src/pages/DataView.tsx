@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { usePresentation } from '@/src/context/PresentationContext';
 import { DataTable } from '@/src/components/DataTable';
-import { PlayIcon, TrashIcon, EraserIcon } from '@/src/components/Icons';
+import { PlayIcon, TrashIcon, EraserIcon, SaveIcon } from '@/src/components/Icons';
 import toast from 'react-hot-toast';
 
 interface DataViewProps {
@@ -12,6 +12,7 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
   const { state, dispatch } = usePresentation();
   const presentationQueue = state.dataSources.find(ds => ds.id === 'presentation-queue');
   const presentedItems = state.dataSources.find(ds => ds.id === 'presented-items');
+  const [duration, setDuration] = useState(state.autoplayDuration / 1000);
 
   const stateRef = useRef(state);
   useEffect(() => {
@@ -71,6 +72,11 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
     }
   };
 
+  const handleSaveSettings = () => {
+    dispatch({ type: 'SET_AUTOPLAY_DURATION', payload: { duration: duration * 1000 } });
+    toast.success('Đã lưu cài đặt!');
+  };
+
   return (
     <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-surface-200">
       {/* Presentation Queue Column */}
@@ -82,25 +88,45 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
                     Dữ liệu mới sẽ tự động được thêm vào đây.
                 </p>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0 mt-1">
-                <button
-                    onClick={handleClearQueue}
-                    disabled={(!presentationQueue || presentationQueue.data.length === 0) && (!presentedItems || presentedItems.data.length === 0)}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-white border rounded-md text-red-600 border-red-200 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Xóa hàng đợi và lịch sử"
-                >
-                    <EraserIcon className="w-4 h-4" />
-                    <span>Xóa hết</span>
-                </button>
-                <button
-                    onClick={() => onPresentQueue()}
-                    disabled={!presentationQueue || presentationQueue.data.length === 0}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-md shadow-sm hover:bg-primary-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    title="Bắt đầu trình chiếu từ hàng đợi"
-                >
-                    <PlayIcon className="w-5 h-5" />
-                    <span className="font-medium">Trình chiếu</span>
-                </button>
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                    <label htmlFor="duration-input" className="text-sm font-medium text-gray-600 flex-shrink-0">Thời gian (giây):</label>
+                    <input
+                        id="duration-input"
+                        type="number"
+                        value={duration}
+                        onChange={(e) => setDuration(Number(e.target.value))}
+                        className="w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                        min="1"
+                    />
+                    <button 
+                        onClick={handleSaveSettings}
+                        className="flex items-center gap-2 px-3 py-2 text-sm bg-white border rounded-md text-gray-700 hover:bg-gray-50"
+                        title="Lưu cài đặt"
+                    >
+                        <SaveIcon className="w-4 h-4" />
+                        <span>Lưu</span>
+                    </button>
+                </div>
+                <div className="h-8 w-px bg-gray-300"></div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                        onClick={handleClearQueue}
+                        disabled={(!presentationQueue || presentationQueue.data.length === 0) && (!presentedItems || presentedItems.data.length === 0)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm bg-white border rounded-md text-red-600 border-red-200 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Xóa hàng đợi và lịch sử"
+                    >
+                        <EraserIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => onPresentQueue()}
+                        disabled={!presentationQueue || presentationQueue.data.length === 0}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-md shadow-sm hover:bg-primary-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        title="Bắt đầu trình chiếu từ hàng đợi"
+                    >
+                        <PlayIcon className="w-5 h-5" />
+                    </button>
+                </div>
             </div>
         </div>
         <div className="flex-grow">

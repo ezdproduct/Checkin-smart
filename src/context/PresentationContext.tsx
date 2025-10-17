@@ -19,7 +19,8 @@ type Action =
   | { type: 'REMOVE_FROM_QUEUE'; payload: { itemIndex: number } }
   | { type: 'CLEAR_QUEUE' }
   | { type: 'PROCESS_FETCHED_DATA'; payload: { data: Record<string, any>[] } }
-  | { type: 'MOVE_QUEUE_ITEM_TO_PRESENTED'; payload: { item: Record<string, any> } };
+  | { type: 'MOVE_QUEUE_ITEM_TO_PRESENTED'; payload: { item: Record<string, any> } }
+  | { type: 'SET_AUTOPLAY_DURATION'; payload: { duration: number } };
 
 const createNewSlide = (): Slide => ({
   id: `slide-${Date.now()}`,
@@ -47,6 +48,7 @@ const initialState: PresentationState = {
     { id: 'presentation-queue', name: 'Hàng đợi trình chiếu', data: [] },
     { id: 'presented-items', name: 'Đã trình chiếu', data: [] }
   ],
+  autoplayDuration: 5000,
 };
 initialState.activeSlideId = initialState.slides[0].id;
 
@@ -230,6 +232,11 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
             }),
         };
     }
+    case 'SET_AUTOPLAY_DURATION':
+      return {
+        ...state,
+        autoplayDuration: action.payload.duration,
+      };
     default:
       return state;
   }

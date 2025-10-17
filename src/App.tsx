@@ -81,6 +81,7 @@ const AppContent: React.FC = () => {
           mode={presentationProps.settings.mode}
           dataSources={state.dataSources}
           dispatch={dispatch}
+          autoplayDuration={state.autoplayDuration}
         />,
         container
       )}

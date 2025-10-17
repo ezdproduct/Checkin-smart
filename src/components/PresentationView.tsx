@@ -40,9 +40,10 @@ interface PresentationViewProps {
   mode: 'manual' | 'autoplay';
   dataSources: DataSource[];
   dispatch: React.Dispatch<any>;
+  autoplayDuration: number;
 }
 
-export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onExit, initialSlideIndex, autoFullscreen, mode, dataSources, dispatch }) => {
+export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onExit, initialSlideIndex, autoFullscreen, mode, dataSources, dispatch, autoplayDuration }) => {
   const [currentSlide, setCurrentSlide] = useState<Slide>(slides[initialSlideIndex]);
   const [manualSlideIndex, setManualSlideIndex] = useState(initialSlideIndex);
   const [scale, setScale] = useState(1);
@@ -69,13 +70,13 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
 
         const timer = setTimeout(() => {
             dispatch({ type: 'MOVE_QUEUE_ITEM_TO_PRESENTED', payload: { item: nextItemInQueue } });
-        }, 3000);
+        }, autoplayDuration);
 
         return () => clearTimeout(timer);
     } else {
         setCurrentSlide(welcomeSlide);
     }
-  }, [mode, presentationQueue, slides, manualSlideIndex, dispatch]);
+  }, [mode, presentationQueue, slides, manualSlideIndex, dispatch, autoplayDuration]);
 
   const nextSlide = useCallback(() => {
     setManualSlideIndex(prev => (prev + 1) % slides.length);
@@ -185,6 +186,9 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
                 textDecoration: textEl.textDecoration,
                 textTransform: textEl.textTransform,
             };
+            if (animationClass && mode === 'autoplay') {
+                textStyle.animationDuration = `${autoplayDuration}ms`;
+            }
             return <div style={textStyle} className={animationClass}>{textEl.text}</div>;
         }
         case ElementType.IMAGE: {
