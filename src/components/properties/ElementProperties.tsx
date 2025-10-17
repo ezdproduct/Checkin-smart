@@ -111,6 +111,19 @@ const TextProperties: React.FC<{ element: TextElement, onUpdateElement: (el: Tex
                 <ToggleButton onClick={() => onUpdateElement({ ...element, align: 'right' })} isActive={element.align === 'right'} title="Căn phải"><AlignRightIcon className="w-4 h-4" /></ToggleButton>
                 <ToggleButton onClick={() => onUpdateElement({ ...element, align: 'justify' })} isActive={element.align === 'justify'} title="Căn đều"><AlignJustifyIcon className="w-4 h-4" /></ToggleButton>
             </div>
+            <hr className="my-4 border-gray-200" />
+            <PropInput label="Hiệu ứng xuất hiện">
+                <select 
+                    value={element.entryAnimation || 'none'} 
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onUpdateElement({ ...element, entryAnimation: e.target.value as TextElement['entryAnimation'] })} 
+                    className={baseInputClasses}
+                >
+                    <option value="none">Không có</option>
+                    <option value="fadeIn">Mờ dần</option>
+                    <option value="slideInBottom">Trượt lên</option>
+                    <option value="zoomIn">Phóng to</option>
+                </select>
+            </PropInput>
         </>
     );
 };

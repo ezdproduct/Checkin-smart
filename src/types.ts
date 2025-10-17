@@ -26,6 +26,7 @@ export interface TextElement extends ElementBase {
   fontStyle: 'normal' | 'italic';
   textDecoration: 'none' | 'underline' | 'line-through';
   textTransform: 'none' | 'uppercase' | 'lowercase';
+  entryAnimation?: 'none' | 'fadeIn' | 'slideInBottom' | 'zoomIn';
 }
 
 export interface ImageElement extends ElementBase {

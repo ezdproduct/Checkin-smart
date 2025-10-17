@@ -23,6 +23,15 @@ const populateSlideWithData = (templateSlide: Slide, dataRow: Record<string, any
     return newSlide;
 };
 
+const getAnimationClass = (animation?: TextElement['entryAnimation']) => {
+    switch (animation) {
+        case 'fadeIn': return 'animate-fade-in';
+        case 'slideInBottom': return 'animate-slide-in-bottom';
+        case 'zoomIn': return 'animate-zoom-in';
+        default: return '';
+    }
+};
+
 interface PresentationViewProps {
   slides: Slide[];
   onExit: () => void;
@@ -164,6 +173,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
     switch (element.type) {
         case ElementType.TEXT: {
             const textEl = element as TextElement;
+            const animationClass = getAnimationClass(textEl.entryAnimation);
             const textStyle: React.CSSProperties = {
                 ...style,
                 fontSize: `${textEl.fontSize}px`,
@@ -175,7 +185,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
                 textDecoration: textEl.textDecoration,
                 textTransform: textEl.textTransform,
             };
-            return <div style={textStyle}>{textEl.text}</div>;
+            return <div style={textStyle} className={animationClass}>{textEl.text}</div>;
         }
         case ElementType.IMAGE: {
             const imgEl = element as ImageElement;
