@@ -3,11 +3,6 @@
   to { opacity: 1; }
 }
 
-@keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-
 @keyframes slideInBottom {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -18,12 +13,17 @@
   to { transform: scale(1); opacity: 1; }
 }
 
-.animate-fade-in {
-  animation: fadeIn 1s ease-in-out both;
+@keyframes ripple-in {
+  from {
+    clip-path: circle(0% at 50% 50%);
+  }
+  to {
+    clip-path: circle(75% at 50% 50%);
+  }
 }
 
-.animate-fade-out {
-  animation: fadeOut 1s ease-in-out forwards;
+.animate-fade-in {
+  animation: fadeIn 0.7s ease-out both;
 }
 
 .animate-slide-in-bottom {
@@ -32,4 +32,8 @@
 
 .animate-zoom-in {
   animation: zoomIn 0.7s ease-out both;
+}
+
+.animate-ripple-in {
+  animation: ripple-in 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
