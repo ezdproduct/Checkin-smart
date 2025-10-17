@@ -37,6 +37,33 @@ export const convertToDirectUrl = (url: string): string => {
     return url;
 };
 
+export const populateSlideWithData = (templateSlide: Slide, dataRow: Record<string, any>): Slide => {
+    const newSlide: Slide = JSON.parse(JSON.stringify(templateSlide));
+    newSlide.id = `${templateSlide.id}-presented-${Date.now()}`;
+
+    newSlide.elements = newSlide.elements.map(el => {
+        const newEl = { ...el };
+        if ((newEl.type === ElementType.TEXT || newEl.type === ElementType.IMAGE) && newEl.dataColumn) {
+            const valueFromData = dataRow[newEl.dataColumn];
+            if (valueFromData !== undefined) {
+                if (newEl.type === ElementType.TEXT) (newEl as TextElement).text = String(valueFromData);
+                else if (newEl.type === ElementType.IMAGE) (newEl as ImageElement).src = String(valueFromData);
+            }
+        }
+        return newEl;
+    });
+    return newSlide;
+};
+
+export const getAnimationClass = (animation?: TextElement['entryAnimation']) => {
+    switch (animation) {
+        case 'fadeIn': return 'animate-fade-in';
+        case 'slideInBottom': return 'animate-slide-in-bottom';
+        case 'zoomIn': return 'animate-zoom-in';
+        default: return '';
+    }
+};
+
 export const renderThumbnailElement = (element: PresentationElement, slideDimensions: {width: number, height: number}, thumbnailWidth: number): React.ReactNode => {
     const style: React.CSSProperties = {
         position: 'absolute',
