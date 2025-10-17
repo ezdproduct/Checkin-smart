@@ -20,7 +20,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ title, dispatch, onExportPrese
   return (
     <header className="flex-shrink-0 w-full bg-surface-100 border-b border-gray-200 p-3 flex items-center justify-between text-text-900 shadow-sm">
         <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold text-primary-600">DeckGenius</h1>
+            <h1 className="text-xl font-bold text-primary-600">Điểm danh</h1>
             <div className="h-6 w-px bg-gray-300"></div>
             <input 
               type="text" 
