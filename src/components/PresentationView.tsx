@@ -160,30 +160,20 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
 
         const transitionTimer = setTimeout(() => {
             setSlideState(prevState => ({ ...prevState, previous: null, isTransitioning: false }));
-        }, 1000);
+        }, 1000); // Duration of the ripple animation
 
-        const slideChangeTimer = setTimeout(() => {
+        const slideTimer = setTimeout(() => {
             dispatch({ type: 'MOVE_QUEUE_ITEM_TO_PRESENTED', payload: { item: nextItemInQueue } });
         }, autoplayDuration);
 
         return () => {
             clearTimeout(transitionTimer);
-            clearTimeout(slideChangeTimer);
+            clearTimeout(slideTimer);
         };
     } else {
-        if (slideState.current.id !== welcomeSlide.id) {
-            setSlideState(prevState => ({
-                previous: prevState.current,
-                current: welcomeSlide,
-                isTransitioning: true,
-            }));
-            const transitionTimer = setTimeout(() => {
-                setSlideState(prevState => ({ ...prevState, previous: null, isTransitioning: false }));
-            }, 1000);
-            return () => clearTimeout(transitionTimer);
-        }
+        setSlideState({ current: welcomeSlide, previous: null, isTransitioning: false });
     }
-  }, [mode, presentationQueue, slides, manualSlideIndex, dispatch, autoplayDuration, slideState.current.id]);
+  }, [mode, presentationQueue, slides, manualSlideIndex, dispatch, autoplayDuration]);
 
   const nextSlide = useCallback(() => {
     setManualSlideIndex(prev => (prev + 1) % slides.length);
@@ -288,7 +278,6 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
                 slideDesignDimensions={slideDesignDimensions}
                 autoplayDuration={autoplayDuration}
                 mode={mode}
-                className={'animate-fade-out'}
             />
         )}
         <SlideComponent 
@@ -297,7 +286,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
             slideDesignDimensions={slideDesignDimensions}
             autoplayDuration={autoplayDuration}
             mode={mode}
-            className={slideState.isTransitioning ? 'animate-fade-in' : ''}
+            className={slideState.isTransitioning ? 'animate-ripple-in' : ''}
         />
       </div>
       {contextMenu.visible && (
