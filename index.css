@@ -18,7 +18,7 @@
 }
 
 .animate-slide-in-bottom {
-  animation: slideInBottom 0.7s ease-out both;
+  animation: slideInBottom 3s ease-out both;
 }
 
 .animate-zoom-in {

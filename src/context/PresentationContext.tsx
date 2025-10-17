@@ -30,7 +30,8 @@ const createNewSlide = (): Slide => ({
       text: 'Tiêu đề Slide mới',
       x: 50, y: 50, width: 700, height: 80, rotation: 0,
       fontSize: 48, fontFamily: 'Arial', color: '#000000', align: 'center',
-      fontWeight: 'normal', fontStyle: 'normal', textDecoration: 'none', textTransform: 'none'
+      fontWeight: 'normal', fontStyle: 'normal', textDecoration: 'none', textTransform: 'none',
+      entryAnimation: 'slideInBottom'
     }
   ],
   backgroundColor: '#FFFFFF',
@@ -103,7 +104,8 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
                     id: `el-${now}`, type: ElementType.TEXT, text: 'Văn bản mới', 
                     x: 100, y: 100, width: 200, height: 50, rotation: 0, 
                     fontSize: 16, fontFamily: 'Arial', color: '#000000', align: 'left',
-                    fontWeight: 'normal', fontStyle: 'normal', textDecoration: 'none', textTransform: 'none'
+                    fontWeight: 'normal', fontStyle: 'normal', textDecoration: 'none', textTransform: 'none',
+                    entryAnimation: 'slideInBottom'
                 };
                 break;
             case ElementType.IMAGE:
