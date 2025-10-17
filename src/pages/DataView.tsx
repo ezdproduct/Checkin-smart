@@ -28,19 +28,15 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
         const data = await response.json();
         if (Array.isArray(data)) {
           const currentQueue = stateRef.current.dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
-          const checkedInItems = data.filter(item => item.checkin === true);
+          const currentInput = stateRef.current.dataSources.find(ds => ds.id === 'data-input')?.data || [];
+          const existingIds = new Set([...currentQueue.map(i => i.id), ...currentInput.map(i => i.id)]);
           
-          let newItemsAddedCount = 0;
-          checkedInItems.forEach(item => {
-            if (!currentQueue.some(queueItem => queueItem.id === item.id)) {
-              newItemsAddedCount++;
-            }
-          });
-
+          const newItems = data.filter(item => !existingIds.has(item.id));
+          
           dispatch({ type: 'PROCESS_FETCHED_DATA', payload: { data } });
 
-          if (newItemsAddedCount > 0) {
-            toast.success(`Đã tự động thêm ${newItemsAddedCount} mục mới vào hàng đợi!`);
+          if (newItems.length > 0) {
+            toast.success(`Đã tự động thêm ${newItems.length} mục mới vào hàng đợi!`);
           }
         } else {
           console.error("Dữ liệu trả về không phải là một mảng.");

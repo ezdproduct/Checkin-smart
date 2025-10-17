@@ -216,26 +216,28 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
         };
     }
     case 'PROCESS_FETCHED_DATA': {
-        const { data } = action.payload;
-        const checkedInItems = data.filter(item => item.checkin === true);
-        const otherItems = data.filter(item => item.checkin !== true);
-
+        const { data: fetchedData } = action.payload;
+        
         const currentQueue = state.dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
-        const newQueueData = [...currentQueue];
+        const currentInput = state.dataSources.find(ds => ds.id === 'data-input')?.data || [];
 
-        // Chỉ thêm các mục mới chưa có trong hàng đợi
-        checkedInItems.forEach(item => {
-            // Giả sử mỗi mục có một thuộc tính 'id' duy nhất
-            if (!newQueueData.some(queueItem => queueItem.id === item.id)) {
-                newQueueData.push(item);
-            }
-        });
+        const existingIds = new Set([
+            ...currentQueue.map(item => item.id),
+            ...currentInput.map(item => item.id)
+        ]);
+
+        const newItemsForQueue = fetchedData.filter(item => !existingIds.has(item.id));
+        
+        const newQueueData = [...currentQueue, ...newItemsForQueue];
+        const newQueueIds = new Set(newQueueData.map(item => item.id));
+
+        const updatedInputData = fetchedData.filter(item => !newQueueIds.has(item.id));
 
         return {
             ...state,
             dataSources: state.dataSources.map(ds => {
                 if (ds.id === 'presentation-queue') return { ...ds, data: newQueueData };
-                if (ds.id === 'data-input') return { ...ds, data: otherItems };
+                if (ds.id === 'data-input') return { ...ds, data: updatedInputData };
                 return ds;
             }),
         };
