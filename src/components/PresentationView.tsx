@@ -149,6 +149,9 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
     const templateSlide = slides[1]; 
     const nextItemInQueue = presentationQueue[0];
 
+    let slideTimer: number;
+    let transitionTimer: number;
+
     if (nextItemInQueue && templateSlide) {
         const populatedSlide = populateSlideWithData(templateSlide, nextItemInQueue);
         
@@ -158,22 +161,33 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
             isTransitioning: true,
         }));
 
-        const transitionTimer = setTimeout(() => {
+        transitionTimer = window.setTimeout(() => {
             setSlideState(prevState => ({ ...prevState, previous: null, isTransitioning: false }));
-        }, 1000); // Duration of the ripple animation
+        }, 1000);
 
-        const slideTimer = setTimeout(() => {
+        slideTimer = window.setTimeout(() => {
             dispatch({ type: 'MOVE_QUEUE_ITEM_TO_PRESENTED', payload: { item: nextItemInQueue } });
         }, autoplayDuration);
 
-        return () => {
-            clearTimeout(transitionTimer);
-            clearTimeout(slideTimer);
-        };
     } else {
-        setSlideState({ current: welcomeSlide, previous: null, isTransitioning: false });
+        if (slideState.current.id !== welcomeSlide.id) {
+            setSlideState(prevState => ({
+                previous: prevState.current,
+                current: welcomeSlide,
+                isTransitioning: true,
+            }));
+
+            transitionTimer = window.setTimeout(() => {
+                setSlideState(prevState => ({ ...prevState, previous: null, isTransitioning: false }));
+            }, 1000);
+        }
     }
-  }, [mode, presentationQueue, slides, manualSlideIndex, dispatch, autoplayDuration]);
+    
+    return () => {
+        clearTimeout(slideTimer);
+        clearTimeout(transitionTimer);
+    };
+  }, [mode, presentationQueue, slides, manualSlideIndex, dispatch, autoplayDuration, slideState.current.id]);
 
   const nextSlide = useCallback(() => {
     setManualSlideIndex(prev => (prev + 1) % slides.length);
