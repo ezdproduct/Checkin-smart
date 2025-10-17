@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeckGenius</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              'primary': {
+                '500': '#6366f1',
+                '600': '#4f46e5',
+                '700': '#4338ca',
+              },
+              'secondary': '#10b981',
+              'surface': {
+                '100': '#ffffff', // light-surface
+                '200': '#f3f4f6', // light-bg
+                '800': '#1f2937', // dark-surface
+                '900': '#111827', // dark-bg
+              },
+              'text': {
+                 '100': '#f9fafb', // dark-text
+                 '900': '#1f2937', // light-text
+              },
+            }
+          }
+        }
+      }
+    </script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-surface-200">
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>
