@@ -47,7 +47,7 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
     };
 
     fetchAndProcessData();
-    const intervalId = setInterval(fetchAndProcessData, 10000); // Changed to 10 seconds
+    const intervalId = setInterval(fetchAndProcessData, 5000);
 
     return () => clearInterval(intervalId);
   }, [dispatch]);
