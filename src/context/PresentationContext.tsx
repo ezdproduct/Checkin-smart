@@ -172,7 +172,7 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
         if (!queue || !dataInput) return state;
         
         const newQueueData = [...queue.data, item];
-        const newDataInputData = dataInput.data.filter(d => d !== item);
+        const newDataInputData = dataInput.data.filter(d => d.Stt !== item.Stt);
         
         return {
             ...state,
@@ -210,16 +210,16 @@ function presentationReducer(state: PresentationState, action: Action): Presenta
         const currentInput = state.dataSources.find(ds => ds.id === 'data-input')?.data || [];
 
         const existingIds = new Set([
-            ...currentQueue.map(item => item.id),
-            ...currentInput.map(item => item.id)
+            ...currentQueue.map(item => item.Stt),
+            ...currentInput.map(item => item.Stt)
         ]);
 
-        const newItemsForQueue = fetchedData.filter(item => !existingIds.has(item.id));
+        const newItemsForQueue = fetchedData.filter(item => !existingIds.has(item.Stt));
         
         const newQueueData = [...currentQueue, ...newItemsForQueue];
-        const newQueueIds = new Set(newQueueData.map(item => item.id));
+        const newQueueIds = new Set(newQueueData.map(item => item.Stt));
 
-        const updatedInputData = fetchedData.filter(item => !newQueueIds.has(item.id));
+        const updatedInputData = fetchedData.filter(item => !newQueueIds.has(item.Stt));
 
         return {
             ...state,

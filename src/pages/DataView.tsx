@@ -32,17 +32,17 @@ export const DataView: React.FC<DataViewProps> = ({ onPresentQueue }) => {
           return; 
         }
 
-        if (data.length > 0 && data[0].id === undefined) {
-          toast.error("Dữ liệu trả về không hợp lệ (thiếu ID).");
-          console.error("Dữ liệu không chứa thuộc tính 'id'.", data[0]);
+        if (data.length > 0 && data[0].Stt === undefined) {
+          toast.error("Dữ liệu trả về không hợp lệ (thiếu Stt).");
+          console.error("Dữ liệu không chứa thuộc tính 'Stt'.", data[0]);
           return;
         }
 
         const currentQueue = stateRef.current.dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
         const currentInput = stateRef.current.dataSources.find(ds => ds.id === 'data-input')?.data || [];
-        const existingIds = new Set([...currentQueue.map(i => i.id), ...currentInput.map(i => i.id)]);
+        const existingIds = new Set([...currentQueue.map(i => i.Stt), ...currentInput.map(i => i.Stt)]);
         
-        const newItems = data.filter(item => !existingIds.has(item.id));
+        const newItems = data.filter(item => !existingIds.has(item.Stt));
         
         if (newItems.length > 0) {
           dispatch({ type: 'PROCESS_FETCHED_DATA', payload: { data } });
