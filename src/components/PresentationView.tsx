@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Slide, PresentationElement, TextElement, ImageElement, DataSource } from '@/src/types';
 import { ElementType } from '@/src/types';
 import { getSlideDimensions, convertToDirectUrl } from '@/src/utils/presentationUtils';
-import { MaximizeIcon, MinimizeIcon } from './Icons';
 
 const populateSlideWithData = (templateSlide: Slide, dataRow: Record<string, any>): Slide => {
     const newSlide: Slide = JSON.parse(JSON.stringify(templateSlide));
@@ -35,7 +34,6 @@ interface PresentationViewProps {
 export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onExit, initialSlideIndex, autoFullscreen, mode, dataSources, dispatch }) => {
   const [currentSlide, setCurrentSlide] = useState<Slide>(slides[initialSlideIndex]);
   const [manualSlideIndex, setManualSlideIndex] = useState(initialSlideIndex);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [scale, setScale] = useState(1);
   const presentationRootRef = useRef<HTMLDivElement>(null);
   const presentationQueue = dataSources.find(ds => ds.id === 'presentation-queue')?.data || [];
@@ -109,9 +107,6 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
     const doc = presentationRootRef.current?.ownerDocument;
     if (!doc) return;
 
-    const handleFullscreenChange = () => setIsFullscreen(!!doc.fullscreenElement);
-    doc.addEventListener('fullscreenchange', handleFullscreenChange);
-
     if (autoFullscreen) {
       const timer = setTimeout(() => {
         if (doc.documentElement && !doc.fullscreenElement) {
@@ -120,20 +115,9 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
           });
         }
       }, 100);
-      return () => {
-        clearTimeout(timer);
-        doc.removeEventListener('fullscreenchange', handleFullscreenChange);
-      };
+      return () => clearTimeout(timer);
     }
-    return () => doc.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [autoFullscreen]);
-
-  const toggleFullscreen = () => {
-    const doc = presentationRootRef.current?.ownerDocument?.documentElement;
-    if (!doc) return;
-    if (!isFullscreen) doc.requestFullscreen().catch(console.error);
-    else document.exitFullscreen();
-  };
 
   if (!currentSlide) return null;
 
@@ -199,15 +183,6 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
         }}
       >
         {currentSlide.elements.map(el => <div key={el.id}>{renderElement(el)}</div>)}
-      </div>
-      <div className="absolute bottom-4 right-4 flex items-center space-x-2 p-2 bg-black/50 rounded-lg text-white z-20">
-        <button 
-            onClick={toggleFullscreen}
-            className="p-2 hover:bg-white/20 rounded-full transition-colors"
-            title={isFullscreen ? 'Thoát toàn màn hình' : 'Vào toàn màn hình'}
-        >
-            {isFullscreen ? <MinimizeIcon className="w-5 h-5" /> : <MaximizeIcon className="w-5 h-5" />}
-        </button>
       </div>
     </div>
   );
