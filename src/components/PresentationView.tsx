@@ -149,31 +149,48 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ slides, onEx
     const templateSlide = slides[1]; 
     const nextItemInQueue = presentationQueue[0];
 
+    let nextSlide: Slide;
     if (nextItemInQueue && templateSlide) {
-        const populatedSlide = populateSlideWithData(templateSlide, nextItemInQueue);
-        
+        nextSlide = populateSlideWithData(templateSlide, nextItemInQueue);
+    } else {
+        nextSlide = welcomeSlide;
+    }
+
+    if (nextSlide.id !== slideState.current.id) {
         setSlideState(prevState => ({
             previous: prevState.current,
-            current: populatedSlide,
+            current: nextSlide,
             isTransitioning: true,
         }));
 
         const transitionTimer = setTimeout(() => {
-            setSlideState(prevState => ({ ...prevState, previous: null, isTransitioning: false }));
-        }, 1000); // Duration of the fade animation
+            setSlideState(prevState => ({ ...prevState, isTransitioning: false, previous: null }));
+        }, 1000); // Animation duration
 
         const slideTimer = setTimeout(() => {
-            dispatch({ type: 'MOVE_QUEUE_ITEM_TO_PRESENTED', payload: { item: nextItemInQueue } });
+            if (nextItemInQueue) {
+                dispatch({ type: 'MOVE_QUEUE_ITEM_TO_PRESENTED', payload: { item: nextItemInQueue } });
+            }
         }, autoplayDuration);
 
         return () => {
             clearTimeout(transitionTimer);
             clearTimeout(slideTimer);
         };
-    } else {
-        setSlideState({ current: welcomeSlide, previous: null, isTransitioning: false });
+    } else if (!nextItemInQueue && slideState.current.id !== welcomeSlide.id) {
+        // Transition back to welcome slide if queue is empty
+        setSlideState(prevState => ({
+            previous: prevState.current,
+            current: welcomeSlide,
+            isTransitioning: true,
+        }));
+        const timer = setTimeout(() => {
+            setSlideState(prevState => ({ ...prevState, isTransitioning: false, previous: null }));
+        }, 1000);
+        return () => clearTimeout(timer);
     }
-  }, [mode, presentationQueue, slides, manualSlideIndex, dispatch, autoplayDuration]);
+
+  }, [mode, presentationQueue, slides, manualSlideIndex, dispatch, autoplayDuration, slideState.current.id]);
 
   const nextSlide = useCallback(() => {
     setManualSlideIndex(prev => (prev + 1) % slides.length);
